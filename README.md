@@ -99,7 +99,7 @@ feat: implementa cadastro de conta (#5)
 * No terminal do VSCode, execute o projeto com Maven:
 
   ```bash
-  mvn -q exec:java
+  mvn clean compile exec:java
   ```
 
 ### 8.1. VSCode
