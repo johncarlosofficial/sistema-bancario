@@ -1,11 +1,13 @@
 package com.banco.service;
 
+import com.banco.dao.ContaDAO;
 import com.banco.model.Conta;
 
 import java.util.Scanner;
 
 public class ContaService {
 
+    private ContaDAO contaDAO = new ContaDAO();
     Scanner sc = new Scanner(System.in);
 
     public void iniciarServico() {
@@ -58,6 +60,8 @@ public class ContaService {
         cpf = sc.nextLine();
         try {
             Conta conta = new Conta(nome, cpf, saldoInicial);
+            contaDAO.save(conta);
+            System.out.println("Conta Cadastrada com sucesso!");
         }catch (Exception e){
             System.out.println("Erro ao criar conta.");
         }
