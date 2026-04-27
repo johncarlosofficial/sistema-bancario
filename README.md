@@ -21,9 +21,9 @@ Este projeto consiste em um sistema bancário simples desenvolvido em **Java**, 
 
 ## 2. Equipe
 
-* João Carlos de Magalhães Rodrigues
-* Jorge William Camara Sales
-* Rafael de Moura Cassiano Silva
+* João Carlos de Magalhães Rodrigues: [@johncarlosofficial](https://github.com/johncarlosofficial)
+* Jorge William Camara Sales: [@Jorgelino328](https://github.com/Jorgelino328)
+* Rafael de Moura Cassiano Silva: [@rafael1109-moura](https://github.com/rafael1109-moura)
 
 ## 3. Branches
 
