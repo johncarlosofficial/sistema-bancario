@@ -1,30 +1,20 @@
 package com.banco.model;
 
 public class Conta {
-    private String nome;
-    private String cpf;
+    private int numero;
     private double saldo;
 
-    public Conta(String nome, String cpf, double saldoInicial) {
-        this.nome = nome;
-        this.cpf = cpf;
+    public Conta(int numero, double saldoInicial) {
+        this.numero = numero;
         this.saldo = saldoInicial;
     }
 
-    public String getNome() {
-        return nome;
+    public int getNumero() {
+        return numero;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getCpf() {
-        return cpf;
-    }
-
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
+    public void setNumero(int numero) {
+        this.numero = numero;
     }
 
     public double getSaldo() {

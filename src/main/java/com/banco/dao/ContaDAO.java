@@ -11,4 +11,8 @@ public class ContaDAO {
     public void save(Conta conta) {
         contas.add(conta);
     }
+
+    public List<Conta> getContas() {
+        return contas;
+    }
 }

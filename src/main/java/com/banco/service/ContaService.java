@@ -45,20 +45,28 @@ public class ContaService {
                 // TODO: Implementar transferência entre contas.
                 break;
 
+            // PARA TESTES: Lista contas cadastradas.
+            /*
+            case "6":
+                System.out.println("Você escolheu a opção 6. Listar Contas");
+                System.out.println("Contas cadastradas:");
+                for (Conta conta : contaDAO.getContas()) {
+                    System.out.println("Número: " + conta.getNumero() + " | Saldo: " + conta.getSaldo());
+                }
+                break;
+            */
+
         }
     }
 
     public void CadastrarConta() {
-        String nome;
-        String cpf;
+        int numero;
         double saldoInicial = 0;
         System.out.println("[SERVICE] Cadastrar Conta");
-        System.out.println("Digite o nome do conta:");
-        nome = sc.nextLine();
-        System.out.println("Digite o CPF do conta:");
-        cpf = sc.nextLine();
+        System.out.println("Digite o numero da conta:");
+        numero = Integer.parseInt(sc.nextLine());
         try {
-            Conta conta = new Conta(nome, cpf, saldoInicial);
+            Conta conta = new Conta(numero, saldoInicial);
             contaDAO.save(conta);
             System.out.println("Conta Cadastrada com sucesso!");
         }catch (Exception e){
