@@ -1,0 +1,30 @@
+# Maven
+target/
+
+# Compiled class files
+*.class
+
+# Logs
+*.log
+
+# OS files (macOS)
+.DS_Store
+
+# IDEs
+
+## IntelliJ
+.idea/
+*.iml
+
+## VS Code
+.vscode/
+
+# Temporary files
+*.tmp
+*.swp
+
+# Build folders
+out/
+
+# Environment files
+.env
