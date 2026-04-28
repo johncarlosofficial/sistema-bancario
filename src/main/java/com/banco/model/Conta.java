@@ -1,20 +1,16 @@
 package com.banco.model;
 
 public class Conta {
-    private int numero;
+    private String numero;
     private double saldo;
 
-    public Conta(int numero, double saldoInicial) {
+    public Conta(String numero, double saldoInicial) {
         this.numero = numero;
         this.saldo = saldoInicial;
     }
 
-    public int getNumero() {
+    public String getNumero() {
         return numero;
-    }
-
-    public void setNumero(int numero) {
-        this.numero = numero;
     }
 
     public double getSaldo() {
@@ -25,4 +21,3 @@ public class Conta {
         this.saldo = saldo;
     }
 }
-
