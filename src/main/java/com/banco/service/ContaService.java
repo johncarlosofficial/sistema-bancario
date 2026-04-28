@@ -65,6 +65,12 @@ public class ContaService {
         System.out.println("[SERVICE] Cadastrar Conta");
         System.out.println("Digite o numero da conta:");
         numero = Integer.parseInt(sc.nextLine());
+        for (Conta conta : contaDAO.getContas()) {
+            if (conta.getNumero() == numero) {
+                System.out.println("Número de conta já existe. Por favor escolha outro número.");
+                return;
+            }
+        }
         try {
             Conta conta = new Conta(numero, saldoInicial);
             contaDAO.save(conta);
