@@ -35,4 +35,12 @@ public class ContaService {
 
         return "Conta cadastrada com sucesso!";
     }
+
+    public String consultarSaldo(String numero) {
+        Conta conta = contaDAO.buscarPorNumero(numero);
+        if (conta == null) {
+            return "Conta não encontrada.";
+        }
+        return "Saldo da conta " + numero + ": R$ " + conta.getSaldo();
+    }
 }
