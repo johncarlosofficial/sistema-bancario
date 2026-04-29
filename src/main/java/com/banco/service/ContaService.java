@@ -94,4 +94,39 @@ public class ContaService {
 
         return "Débito realizado com sucesso! Novo saldo: R$ " + conta.getSaldo();
     }
+
+    public String realizarTransferencia(String origem, String destino, double valor){
+
+        // Valor deve ser positivo
+        if (valor <= 0) {
+            return "O valor da transferência deve ser maior que zero.";
+        }
+
+        Conta contaOrigem = contaDAO.buscarPorNumero(origem);
+        Conta contaDestino = contaDAO.buscarPorNumero(destino);
+
+        //verifica se é a mesma conta
+        if (origem.equals(destino)) {
+            return "Conta de origem e destino devem ser diferentes.";
+        }
+        
+        // Verifica existência das contas
+        if (contaOrigem == null) {
+            return "Conta de origem não encontrada.";
+        }
+        if (contaDestino == null) {
+            return "Conta de destino não encontrada.";
+        }
+
+        //verifica saldo suficiente na conta de origem
+        if (contaOrigem.getSaldo() < valor) {
+            return "Saldo insuficiente para realizar a transferência.";
+        }
+        // Realiza débito na conta de origem
+        contaOrigem.setSaldo(contaOrigem.getSaldo() - valor);
+        // Realiza crédito na conta de destino
+        contaDestino.setSaldo(contaDestino.getSaldo() + valor);
+
+        return "Transferência realizada com sucesso! Novo saldo da conta " + origem + ": R$ " + contaOrigem.getSaldo();
+    }
 }
