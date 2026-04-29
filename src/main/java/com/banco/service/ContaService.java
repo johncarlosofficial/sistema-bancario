@@ -43,4 +43,22 @@ public class ContaService {
         }
         return "Saldo da conta " + numero + ": R$ " + conta.getSaldo();
     }
+
+    public String realizarCredito(String numero, double valor) {
+
+        // valida valor
+        if (valor <= 0) {
+            return "O valor do crédito deve ser maior que zero.";
+        }
+
+        Conta conta = contaDAO.buscarPorNumero(numero);
+
+        if (conta == null) {
+            return "Conta não encontrada.";
+        }
+
+        conta.setSaldo(conta.getSaldo() + valor);
+
+        return "Crédito realizado com sucesso! Novo saldo: R$ " + conta.getSaldo();
+    }
 }
