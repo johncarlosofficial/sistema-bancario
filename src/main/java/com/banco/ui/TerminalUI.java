@@ -29,6 +29,7 @@ public class TerminalUI {
         System.out.println("""
                 1. Cadastrar Conta
                 2. Consultar Saldo
+                3. Realizar Crédito
                 0. Sair
                 """);
 
@@ -49,10 +50,40 @@ public class TerminalUI {
 
             String resultado = contaService.consultarSaldo(numero);
             System.out.println(resultado);
+
+        } else if (resposta.equals("3")) {
+            System.out.println("Digite o número da conta:");
+            String numero = sc.nextLine();
+
+            System.out.println("Digite o valor do crédito:");
+            double valor = lerValor();
+
+            String resultado = contaService.realizarCredito(numero, valor);
+            System.out.println(resultado);
+
         } else {
             System.out.println("Opção inválida. Tente novamente.");
         }
 
         return true;
+    }
+
+    private double lerValor() {
+        while (true) {
+            try {
+                String entrada = sc.nextLine();
+                double valor = Double.parseDouble(entrada);
+
+                if (valor <= 0) {
+                    System.out.println("Digite um valor maior que zero:");
+                    continue;
+                }
+
+                return valor;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Valor inválido. Digite um número válido:");
+            }
+        }
     }
 }
