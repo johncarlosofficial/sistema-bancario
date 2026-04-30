@@ -38,6 +38,7 @@ public class TerminalUI {
                 2. Consultar Saldo
                 3. Realizar Crédito
                 4. Realizar Débito
+                5. realizar transferência
                 0. Sair
                 """);
 
@@ -82,6 +83,20 @@ public class TerminalUI {
             double valor = lerValor(); // reutiliza validação
 
             String resultado = contaService.realizarDebito(numero, valor);
+            System.out.println(resultado);
+
+        // Operação de transferência
+        } else if (resposta.equals("5")) {
+            System.out.println("Digite o número da conta de origem:");
+            String origem = sc.nextLine();
+
+            System.out.println("Digite o número da conta de destino:");
+            String destino = sc.nextLine();
+
+            System.out.println("Digite o valor da transferência:");
+            double valor = lerValor(); // reutiliza validação
+
+            String resultado = contaService.realizarTransferencia(origem, destino, valor);
             System.out.println(resultado);
 
         } else {
