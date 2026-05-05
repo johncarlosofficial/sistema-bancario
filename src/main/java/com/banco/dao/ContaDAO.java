@@ -1,32 +1,30 @@
 package com.banco.dao;
 
 import com.banco.model.Conta;
-
 import java.util.ArrayList;
 import java.util.List;
 
+// Simula banco de dados em memória
 public class ContaDAO {
 
-    // Lista em memória que armazena as contas (sem persistência em banco)
-    private List<Conta> contas = new ArrayList<>();
+    private List<Conta> contas = new ArrayList<>(); // lista de contas
 
-    // Salva uma nova conta na lista
+    // Salva conta
     public void salvar(Conta conta) {
         contas.add(conta);
     }
 
-    // Busca uma conta pelo número
+    // Busca conta pelo número
     public Conta buscarPorNumero(String numero) {
         for (Conta conta : contas) {
-            // Compara o número da conta
             if (conta.getNumero().equals(numero)) {
-                return conta; // retorna a conta se encontrar
+                return conta;
             }
         }
-        return null; // retorna null se não existir
+        return null; // não encontrada
     }
 
-    // Retorna todas as contas cadastradas
+    // Lista todas contas
     public List<Conta> listar() {
         return contas;
     }
