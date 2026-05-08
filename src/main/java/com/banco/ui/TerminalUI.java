@@ -38,7 +38,8 @@ public class TerminalUI {
                 2. Consultar Saldo
                 3. Realizar Crédito
                 4. Realizar Débito
-                5. realizar transferência
+                5. Realizar transferência
+                6. Render Juros
                 0. Sair
                 """);
 
@@ -49,10 +50,13 @@ public class TerminalUI {
 
         // Cadastro de conta
         if (resposta.equals("1")) {
+            String tipoConta = lerTipoConta();
+            if (tipoConta == null) return true;
+
             System.out.println("Digite o número da nova conta:");
             String numero = sc.nextLine();
 
-            String resultado = contaService.cadastrarConta(numero);
+            String resultado = contaService.cadastrarConta(numero, tipoConta);
             System.out.println(resultado);
 
         // Consulta de saldo
@@ -99,6 +103,12 @@ public class TerminalUI {
             String resultado = contaService.realizarTransferencia(origem, destino, valor);
             System.out.println(resultado);
 
+        } else if (resposta.equals("6")) {
+            System.out.println("Digite a taxa a ser aplicada:");
+            double taxa = lerValor(); // reutiliza validação
+
+            String resultado = contaService.renderJuros(taxa);
+            System.out.println(resultado);
         } else {
             // Trata opção inválida
             System.out.println("Opção inválida. Tente novamente.");
@@ -125,6 +135,27 @@ public class TerminalUI {
             } catch (NumberFormatException e) {
                 // Trata entrada inválida
                 System.out.println("Valor inválido. Digite um número válido:");
+            }
+        }
+    }
+
+    // Lê um tipo de conta com validação
+    private String lerTipoConta() {
+        while (true) {
+            System.out.println("""
+                    Escolha o tipo de conta:
+                        1 - Conta Corrente
+                        2 - Conta Poupança
+                        0 - Cancelar
+                    """);
+            String tipo = sc.nextLine().trim();
+
+            if (tipo.equals("1") || tipo.equals("2")) {
+                return tipo;
+            } else if (tipo.equals("0")) {
+                return null; // Cancela a operação
+            } else {
+                System.out.println("Opção inválida. Escolha 1, 2 ou 0.");
             }
         }
     }
