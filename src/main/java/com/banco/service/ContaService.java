@@ -138,4 +138,19 @@ public class ContaService {
 
         return "Transferência realizada com sucesso! Novo saldo da conta " + origem + ": R$ " + contaOrigem.getSaldo();
     }
+
+    public String renderJuros(double taxa){
+        int contasAtualizadas = 0;
+        for(Conta conta : contaDAO.listar()){
+            if(conta instanceof ContaPoupanca poupanca){
+                poupanca.renderJuros(taxa);
+                contasAtualizadas++;
+            }
+        }
+        if (contasAtualizadas == 0) {
+            return "Nenhuma conta poupança encontrada para aplicar a taxa.";
+        }
+
+        return "Taxa aplicada com sucesso em " + contasAtualizadas + " contas poupança.";
+    }
 }

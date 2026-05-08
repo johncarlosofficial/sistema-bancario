@@ -39,6 +39,7 @@ public class TerminalUI {
                 3. Realizar Crédito
                 4. Realizar Débito
                 5. Realizar transferência
+                6. Render Juros
                 0. Sair
                 """);
 
@@ -102,6 +103,12 @@ public class TerminalUI {
             String resultado = contaService.realizarTransferencia(origem, destino, valor);
             System.out.println(resultado);
 
+        } else if (resposta.equals("6")) {
+            System.out.println("Digite a taxa a ser aplicada:");
+            double taxa = lerValor(); // reutiliza validação
+
+            String resultado = contaService.renderJuros(taxa);
+            System.out.println(resultado);
         } else {
             // Trata opção inválida
             System.out.println("Opção inválida. Tente novamente.");
