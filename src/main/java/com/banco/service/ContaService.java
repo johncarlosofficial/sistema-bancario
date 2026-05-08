@@ -139,6 +139,7 @@ public class ContaService {
         return "Transferência realizada com sucesso! Novo saldo da conta " + origem + ": R$ " + contaOrigem.getSaldo();
     }
 
+    // Aplica juros à todas as contas-poupança cadastradas
     public String renderJuros(double taxa){
         int contasAtualizadas = 0;
         for(Conta conta : contaDAO.listar()){

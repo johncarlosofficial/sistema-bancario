@@ -1,6 +1,6 @@
 package com.banco.model;
 
-// Representa uma conta bancária simples
+// Modelo base de uma conta bancária
 public abstract class Conta {
 
     // Identificador único da conta
