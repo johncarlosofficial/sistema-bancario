@@ -1,7 +1,7 @@
 package com.banco.model;
 
 // Representa uma conta bancária simples
-public class Conta {
+public abstract class Conta {
 
     // Identificador único da conta
     private String numero;

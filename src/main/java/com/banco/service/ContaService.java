@@ -2,6 +2,8 @@ package com.banco.service;
 
 import com.banco.dao.ContaDAO;
 import com.banco.model.Conta;
+import com.banco.model.ContaCorrente;
+import com.banco.model.ContaPoupanca;
 
 // Camada responsável pelas regras de negócio do sistema bancário
 public class ContaService {
@@ -14,7 +16,7 @@ public class ContaService {
     }
 
     // Cadastra uma nova conta com validações básicas
-    public String cadastrarConta(String numero) {
+    public String cadastrarConta(String numero, String tipoConta) {
 
         // Remove espaços extras
         numero = numero.trim();
@@ -34,10 +36,17 @@ public class ContaService {
             return "Número de conta já existe. Escolha outro número.";
         }
 
-        // Cria conta com saldo inicial zero
-        Conta conta = new Conta(numero, 0);
-        contaDAO.salvar(conta);
+        // Cria conta do tipo selecionado, com saldo 0
+        Conta conta;
+        if (tipoConta.equals("1")) {
+            conta = new ContaCorrente(numero, 0);
+        } else if (tipoConta.equals("2")) {
+            conta = new ContaPoupanca(numero, 0);
+        } else {
+            return "Tipo de conta inválido.";
+        }
 
+        contaDAO.salvar(conta);
         return "Conta cadastrada com sucesso!";
     }
 
