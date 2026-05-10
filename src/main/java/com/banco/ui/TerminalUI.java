@@ -1,8 +1,8 @@
 package com.banco.ui;
 
-import com.banco.service.ContaService;
-
 import java.util.Scanner;
+
+import com.banco.service.ContaService;
 
 // Camada responsável pela interação com o usuário via terminal
 public class TerminalUI {
@@ -40,6 +40,7 @@ public class TerminalUI {
                 4. Realizar Débito
                 5. Realizar transferência
                 6. Render Juros
+                7. Consultar Pontos (Conta Bonus)
                 0. Sair
                 """);
 
@@ -109,6 +110,12 @@ public class TerminalUI {
 
             String resultado = contaService.renderJuros(taxa);
             System.out.println(resultado);
+        } else if (resposta.equals("7")) {
+            System.out.println("Digite o número da conta:");
+            String numero = sc.nextLine();
+
+            String resultado = contaService.consultarPontos(numero);
+            System.out.println(resultado);
         } else {
             // Trata opção inválida
             System.out.println("Opção inválida. Tente novamente.");
@@ -146,16 +153,17 @@ public class TerminalUI {
                     Escolha o tipo de conta:
                         1 - Conta Corrente
                         2 - Conta Poupança
+                        3 - Conta Bonus
                         0 - Cancelar
                     """);
             String tipo = sc.nextLine().trim();
 
-            if (tipo.equals("1") || tipo.equals("2")) {
+            if (tipo.equals("1") || tipo.equals("2") || tipo.equals("3")) {
                 return tipo;
             } else if (tipo.equals("0")) {
                 return null; // Cancela a operação
             } else {
-                System.out.println("Opção inválida. Escolha 1, 2 ou 0.");
+                System.out.println("Opção inválida. Escolha 1, 2, 3 ou 0.");
             }
         }
     }
