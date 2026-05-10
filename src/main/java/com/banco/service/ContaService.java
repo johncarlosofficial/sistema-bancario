@@ -2,6 +2,7 @@ package com.banco.service;
 
 import com.banco.dao.ContaDAO;
 import com.banco.model.Conta;
+import com.banco.model.ContaBonus;
 import com.banco.model.ContaCorrente;
 import com.banco.model.ContaPoupanca;
 
@@ -42,6 +43,8 @@ public class ContaService {
             conta = new ContaCorrente(numero, 0);
         } else if (tipoConta.equals("2")) {
             conta = new ContaPoupanca(numero, 0);
+        } else if (tipoConta.equals("3")) {
+            conta = new ContaBonus(numero, 0);
         } else {
             return "Tipo de conta inválido.";
         }
@@ -79,6 +82,10 @@ public class ContaService {
 
         // Soma valor ao saldo atual
         conta.setSaldo(conta.getSaldo() + valor);
+
+        if (conta instanceof ContaBonus bonus) {
+            bonus.adicionarPontosPorDeposito(valor);
+        }
 
         return "Crédito realizado com sucesso! Novo saldo: R$ " + conta.getSaldo();
     }
@@ -136,6 +143,10 @@ public class ContaService {
         // Realiza crédito na conta de destino
         contaDestino.setSaldo(contaDestino.getSaldo() + valor);
 
+        if (contaDestino instanceof ContaBonus bonus) {
+            bonus.adicionarPontosPorTransferenciaRecebida(valor);
+        }
+
         return "Transferência realizada com sucesso! Novo saldo da conta " + origem + ": R$ " + contaOrigem.getSaldo();
     }
 
@@ -153,5 +164,21 @@ public class ContaService {
         }
 
         return "Taxa aplicada com sucesso em " + contasAtualizadas + " contas poupança.";
+    }
+
+    //consulta pontos de uma conta bonus
+    public String consultarPontos(String numero) {
+        Conta conta = contaDAO.buscarPorNumero(numero);
+
+        // Verifica se a conta existe
+        if (conta == null) {
+            return "Conta não encontrada.";
+        }
+
+        if (conta instanceof ContaBonus bonus) {
+            return "Pontos da conta " + numero + ": " + bonus.getPontos();
+        } else {
+            return "A conta " + numero + " não é do tipo Bonus.";
+        }
     }
 }
