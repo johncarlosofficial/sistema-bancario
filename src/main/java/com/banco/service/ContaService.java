@@ -98,8 +98,19 @@ public class ContaService {
             return "O valor do débito deve ser maior que zero.";
         }
 
-        Conta conta = contaDAO.buscarPorNumero(numero);
 
+
+        Conta conta = contaDAO.buscarPorNumero(numero);
+        //se for conta simples ou bônus, pode ficar até -1000
+        if ((conta instanceof ContaCorrente || conta instanceof ContaBonus) && (conta.getSaldo() - valor < -1000)) {
+            return "Saldo insuficiente para realizar o débito. A conta pode ficar no máximo com saldo negativo de R$ -1000.";
+        }
+
+        //conta poupança não pode ficar negativa
+        if (conta instanceof ContaPoupanca && (conta.getSaldo() - valor < 0)) {
+            return "Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.";
+        }  
+               
         // Verifica existência da conta
         if (conta == null) {
             return "Conta não encontrada.";
@@ -112,7 +123,7 @@ public class ContaService {
     }
 
     public String realizarTransferencia(String origem, String destino, double valor){
-
+        
         // Valor deve ser positivo
         if (valor <= 0) {
             return "O valor da transferência deve ser maior que zero.";
@@ -124,6 +135,16 @@ public class ContaService {
         //verifica se é a mesma conta
         if (origem.equals(destino)) {
             return "Conta de origem e destino devem ser diferentes.";
+        }
+        //verifica se o saldo atual da conta de origem
+
+        //se for conta simples ou bônus, pode ficar até -1000
+        if ((contaOrigem instanceof ContaCorrente || contaOrigem instanceof ContaBonus) && (contaOrigem.getSaldo() - valor < -1000)) {
+            return "Saldo insuficiente para realizar a transferência. A conta pode ficar no máximo com saldo negativo de R$ -1000.";
+        }
+        //conta poupança não pode ficar negativa
+        if (contaOrigem instanceof ContaPoupanca && (contaOrigem.getSaldo() - valor < 0)) {
+            return "Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.";
         }
         
         // Verifica existência das contas
