@@ -17,7 +17,7 @@ public class ContaService {
     }
 
     // Cadastra uma nova conta com validações básicas
-    public String cadastrarConta(String numero, String tipoConta) {
+    public String cadastrarConta(String numero, String tipoConta, double saldoInicial) {
 
         // Remove espaços extras
         numero = numero.trim();
@@ -37,14 +37,19 @@ public class ContaService {
             return "Número de conta já existe. Escolha outro número.";
         }
 
-        // Cria conta do tipo selecionado, com saldo 0
+        // Valida saldo inicial
+        if (saldoInicial < 0){
+            return "Saldo inicial inválido. Por favor digite um valor maior ou igual a zero.";
+        }
+
+        // Cria conta do tipo selecionado
         Conta conta;
         if (tipoConta.equals("1")) {
-            conta = new ContaCorrente(numero, 0);
+            conta = new ContaCorrente(numero, saldoInicial);
         } else if (tipoConta.equals("2")) {
-            conta = new ContaPoupanca(numero, 0);
+            conta = new ContaPoupanca(numero, saldoInicial);
         } else if (tipoConta.equals("3")) {
-            conta = new ContaBonus(numero, 0);
+            conta = new ContaBonus(numero, saldoInicial);
         } else {
             return "Tipo de conta inválido.";
         }
