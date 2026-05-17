@@ -57,7 +57,20 @@ public class TerminalUI {
             System.out.println("Digite o número da nova conta:");
             String numero = sc.nextLine();
 
-            String resultado = contaService.cadastrarConta(numero, tipoConta);
+            double saldoInicial = 0;
+
+            // Contas que exigem saldo inicial
+            if (tipoConta.equals("1") || tipoConta.equals("2")) {
+                System.out.println("Digite o saldo inicial da conta:");
+                saldoInicial = lerValor();
+            }
+
+            String resultado = contaService.cadastrarConta(
+                numero,
+                tipoConta,
+                saldoInicial
+            );
+
             System.out.println(resultado);
 
         // Consulta de saldo

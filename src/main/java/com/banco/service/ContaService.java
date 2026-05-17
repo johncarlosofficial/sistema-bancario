@@ -17,7 +17,7 @@ public class ContaService {
     }
 
     // Cadastra uma nova conta com validações básicas
-    public String cadastrarConta(String numero, String tipoConta) {
+    public String cadastrarConta(String numero, String tipoConta, double saldoInicial) {
 
         // Remove espaços extras
         numero = numero.trim();
@@ -37,14 +37,19 @@ public class ContaService {
             return "Número de conta já existe. Escolha outro número.";
         }
 
-        // Cria conta do tipo selecionado, com saldo 0
+        // Valida saldo inicial
+        if (saldoInicial < 0){
+            return "Saldo inicial inválido. Por favor digite um valor maior ou igual a zero.";
+        }
+
+        // Cria conta do tipo selecionado
         Conta conta;
         if (tipoConta.equals("1")) {
-            conta = new ContaCorrente(numero, 0);
+            conta = new ContaCorrente(numero, saldoInicial);
         } else if (tipoConta.equals("2")) {
-            conta = new ContaPoupanca(numero, 0);
+            conta = new ContaPoupanca(numero, saldoInicial);
         } else if (tipoConta.equals("3")) {
-            conta = new ContaBonus(numero, 0);
+            conta = new ContaBonus(numero, saldoInicial);
         } else {
             return "Tipo de conta inválido.";
         }
@@ -99,7 +104,16 @@ public class ContaService {
         }
 
         Conta conta = contaDAO.buscarPorNumero(numero);
+        //se for conta simples ou bônus, pode ficar até -1000
+        if ((conta instanceof ContaCorrente || conta instanceof ContaBonus) && (conta.getSaldo() - valor < -1000)) {
+            return "Saldo insuficiente para realizar o débito. A conta pode ficar no máximo com saldo negativo de R$ -1000.";
+        }
 
+        //conta poupança não pode ficar negativa
+        if (conta instanceof ContaPoupanca && (conta.getSaldo() - valor < 0)) {
+            return "Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.";
+        }  
+               
         // Verifica existência da conta
         if (conta == null) {
             return "Conta não encontrada.";
@@ -112,7 +126,7 @@ public class ContaService {
     }
 
     public String realizarTransferencia(String origem, String destino, double valor){
-
+      
         // Valor deve ser positivo
         if (valor <= 0) {
             return "O valor da transferência deve ser maior que zero.";
@@ -124,6 +138,15 @@ public class ContaService {
         //verifica se é a mesma conta
         if (origem.equals(destino)) {
             return "Conta de origem e destino devem ser diferentes.";
+        }
+
+        //se for conta simples ou bônus, pode ficar até -1000
+        if ((contaOrigem instanceof ContaCorrente || contaOrigem instanceof ContaBonus) && (contaOrigem.getSaldo() - valor < -1000)) {
+            return "Saldo insuficiente para realizar a transferência. A conta pode ficar no máximo com saldo negativo de R$ -1000.";
+        }
+        //conta poupança não pode ficar negativa
+        if (contaOrigem instanceof ContaPoupanca && (contaOrigem.getSaldo() - valor < 0)) {
+            return "Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.";
         }
         
         // Verifica existência das contas
