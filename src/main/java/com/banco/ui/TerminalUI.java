@@ -59,9 +59,9 @@ public class TerminalUI {
 
             double saldoInicial = 0;
 
-            // HOTFIX apenas para Conta Corrente
-            if (tipoConta.equals("1")) {
-                System.out.println("Digite o saldo inicial:");
+            // Contas que exigem saldo inicial
+            if (tipoConta.equals("1") || tipoConta.equals("2")) {
+                System.out.println("Digite o saldo inicial da conta:");
                 saldoInicial = lerValor();
             }
 

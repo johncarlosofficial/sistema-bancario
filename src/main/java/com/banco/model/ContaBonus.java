@@ -27,7 +27,7 @@ public class ContaBonus extends Conta {
         if (tipoTransacao.equalsIgnoreCase("deposito")) {
             return (int) (valor / 100); // 1 ponto para cada R$ 100,00 de deposito
         } else if (tipoTransacao.equalsIgnoreCase("transferencia_recebida")) {
-            return (int) (valor / 200); // 1 ponto para cada R$ 200,00 recebidos
+            return (int) (valor / 150); // 1 ponto para cada R$ 150,00 recebidos
         }
 
         return 0;
