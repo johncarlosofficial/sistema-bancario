@@ -103,8 +103,6 @@ public class ContaService {
             return "O valor do débito deve ser maior que zero.";
         }
 
-
-
         Conta conta = contaDAO.buscarPorNumero(numero);
         //se for conta simples ou bônus, pode ficar até -1000
         if ((conta instanceof ContaCorrente || conta instanceof ContaBonus) && (conta.getSaldo() - valor < -1000)) {
@@ -128,7 +126,7 @@ public class ContaService {
     }
 
     public String realizarTransferencia(String origem, String destino, double valor){
-        
+      
         // Valor deve ser positivo
         if (valor <= 0) {
             return "O valor da transferência deve ser maior que zero.";
@@ -141,7 +139,6 @@ public class ContaService {
         if (origem.equals(destino)) {
             return "Conta de origem e destino devem ser diferentes.";
         }
-        //verifica se o saldo atual da conta de origem
 
         //se for conta simples ou bônus, pode ficar até -1000
         if ((contaOrigem instanceof ContaCorrente || contaOrigem instanceof ContaBonus) && (contaOrigem.getSaldo() - valor < -1000)) {
