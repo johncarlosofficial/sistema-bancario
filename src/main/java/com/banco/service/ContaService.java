@@ -1,5 +1,7 @@
 package com.banco.service;
 
+import org.springframework.stereotype.Service;
+
 import com.banco.dao.ContaDAO;
 import com.banco.model.Conta;
 import com.banco.model.ContaBonus;
@@ -7,10 +9,15 @@ import com.banco.model.ContaCorrente;
 import com.banco.model.ContaPoupanca;
 
 // Camada responsável pelas regras de negócio do sistema bancário
+@Service
 public class ContaService {
 
     // Acesso aos dados (armazenamento em memória)
-    private ContaDAO contaDAO = new ContaDAO();
+    private final ContaDAO contaDAO;
+
+    public ContaService(ContaDAO contaDAO) {
+        this.contaDAO = contaDAO;
+    }
 
     public void iniciarServico() {
         System.out.println("[SERVICE] Serviço iniciado.");
@@ -104,6 +111,11 @@ public class ContaService {
         }
 
         Conta conta = contaDAO.buscarPorNumero(numero);
+
+        if (conta == null) {
+            return "Conta não encontrada.";
+        }
+
         //se for conta simples ou bônus, pode ficar até -1000
         if ((conta instanceof ContaCorrente || conta instanceof ContaBonus) && (conta.getSaldo() - valor < -1000)) {
             return "Saldo insuficiente para realizar o débito. A conta pode ficar no máximo com saldo negativo de R$ -1000.";
@@ -112,11 +124,6 @@ public class ContaService {
         //conta poupança não pode ficar negativa
         if (conta instanceof ContaPoupanca && (conta.getSaldo() - valor < 0)) {
             return "Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.";
-        }  
-               
-        // Verifica existência da conta
-        if (conta == null) {
-            return "Conta não encontrada.";
         }
 
         // Subtrai valor do saldo (permitindo saldo negativo)
@@ -135,6 +142,14 @@ public class ContaService {
         Conta contaOrigem = contaDAO.buscarPorNumero(origem);
         Conta contaDestino = contaDAO.buscarPorNumero(destino);
 
+        // Verifica existência das contas
+        if (contaOrigem == null) {
+            return "Conta de origem não encontrada.";
+        }
+        if (contaDestino == null) {
+            return "Conta de destino não encontrada.";
+        }
+
         //verifica se é a mesma conta
         if (origem.equals(destino)) {
             return "Conta de origem e destino devem ser diferentes.";
@@ -147,14 +162,6 @@ public class ContaService {
         //conta poupança não pode ficar negativa
         if (contaOrigem instanceof ContaPoupanca && (contaOrigem.getSaldo() - valor < 0)) {
             return "Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.";
-        }
-        
-        // Verifica existência das contas
-        if (contaOrigem == null) {
-            return "Conta de origem não encontrada.";
-        }
-        if (contaDestino == null) {
-            return "Conta de destino não encontrada.";
         }
 
         //verifica saldo suficiente na conta de origem
@@ -203,5 +210,9 @@ public class ContaService {
         } else {
             return "A conta " + numero + " não é do tipo Bonus.";
         }
+    }
+
+    public Conta consultarConta(String numero) {
+        return contaDAO.buscarPorNumero(numero);
     }
 }

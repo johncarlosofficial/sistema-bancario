@@ -4,10 +4,13 @@ import com.banco.model.Conta;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.stereotype.Repository;
+
 // Simula banco de dados em memória
+@Repository
 public class ContaDAO {
 
-    private List<Conta> contas = new ArrayList<>(); // lista de contas
+    private final List<Conta> contas = new ArrayList<>(); // lista de contas
 
     // Salva conta
     public void salvar(Conta conta) {
