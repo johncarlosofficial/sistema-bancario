@@ -3,6 +3,7 @@ package com.banco.service;
 import org.springframework.stereotype.Service;
 
 import com.banco.dao.ContaDAO;
+import com.banco.dto.ContaResponseDTO;
 import com.banco.model.Conta;
 import com.banco.model.ContaBonus;
 import com.banco.model.ContaCorrente;
@@ -65,41 +66,58 @@ public class ContaService {
         return "Conta cadastrada com sucesso!";
     }
 
-    // Consulta o saldo de uma conta pelo número
-    public String consultarSaldo(String numero) {
-        Conta conta = contaDAO.buscarPorNumero(numero);
-
-        // Verifica se a conta existe
-        if (conta == null) {
-            return "Conta não encontrada.";
-        }
-
-        return "Saldo da conta " + numero + ": R$ " + conta.getSaldo();
+    // Consulta o saldo da conta sem formatar a resposta para a API.
+    public double consultarSaldo(String numero) {
+        Conta conta = buscarContaOuLancarExcecao(numero);
+        return conta.getSaldo();
     }
 
-    // Realiza crédito (adição de saldo)
-    public String realizarCredito(String numero, double valor) {
+    // Realiza crédito na conta e atualiza o saldo da conta em memória.
+    public Conta realizarCredito(String numero, double valor) {
 
-        // Valor deve ser positivo
-        if (valor <= 0) {
-            return "O valor do crédito deve ser maior que zero.";
+        // Valida se o valor de crédito não é negativo.
+        if (valor < 0) {
+            throw new IllegalArgumentException("Não é permitido realizar crédito com valor negativo.");
         }
 
-        Conta conta = contaDAO.buscarPorNumero(numero);
-
-        // Verifica existência da conta
-        if (conta == null) {
-            return "Conta não encontrada.";
-        }
-
-        // Soma valor ao saldo atual
+        Conta conta = buscarContaOuLancarExcecao(numero);
         conta.setSaldo(conta.getSaldo() + valor);
 
         if (conta instanceof ContaBonus bonus) {
             bonus.adicionarPontosPorDeposito(valor);
         }
 
-        return "Crédito realizado com sucesso! Novo saldo: R$ " + conta.getSaldo();
+        return conta;
+    }
+
+    // Expõe um resumo da conta no formato solicitado pela API REST.
+    public ContaResponseDTO consultarContaDetalhes(String numero) {
+        Conta conta = buscarContaOuLancarExcecao(numero);
+        ContaResponseDTO contaResponseDTO = new ContaResponseDTO();
+        contaResponseDTO.setNumero(conta.getNumero());
+        contaResponseDTO.setSaldo(conta.getSaldo());
+        contaResponseDTO.setTipoConta(obterTipoConta(conta));
+
+        if (conta instanceof ContaBonus bonus) {
+            contaResponseDTO.setBonus(bonus.getPontos());
+        }
+
+        return contaResponseDTO;
+    }
+
+    // Retorna o resumo da conta após um crédito para a API.
+    public ContaResponseDTO realizarCreditoDetalhado(String numero, double valor) {
+        Conta conta = realizarCredito(numero, valor);
+        ContaResponseDTO contaResponseDTO = new ContaResponseDTO();
+        contaResponseDTO.setNumero(conta.getNumero());
+        contaResponseDTO.setSaldo(conta.getSaldo());
+        contaResponseDTO.setTipoConta(obterTipoConta(conta));
+
+        if (conta instanceof ContaBonus bonus) {
+            contaResponseDTO.setBonus(bonus.getPontos());
+        }
+
+        return contaResponseDTO;
     }
 
     // Realiza débito (subtração de saldo)
@@ -213,6 +231,34 @@ public class ContaService {
     }
 
     public Conta consultarConta(String numero) {
-        return contaDAO.buscarPorNumero(numero);
+        return buscarContaOuLancarExcecao(numero);
+    }
+
+    // Centraliza a busca de conta para evitar repetição e manter a regra em um único ponto.
+    private Conta buscarContaOuLancarExcecao(String numero) {
+        Conta conta = contaDAO.buscarPorNumero(numero);
+
+        if (conta == null) {
+            throw new IllegalArgumentException("Conta não encontrada.");
+        }
+
+        return conta;
+    }
+
+    // Mapeia a conta para um texto legível que será devolvido pela API.
+    private String obterTipoConta(Conta conta) {
+        if (conta instanceof ContaBonus) {
+            return "Conta Bônus";
+        }
+
+        if (conta instanceof ContaPoupanca) {
+            return "Conta Poupança";
+        }
+
+        if (conta instanceof ContaCorrente) {
+            return "Conta Corrente";
+        }
+
+        return "Conta";
     }
 }
