@@ -149,17 +149,18 @@ curl -X POST http://localhost:8080/banco/conta \
 ```bash
 curl  http://localhost:8080/banco/conta/123
 ```
+
 ### 8.5. Consultar saldo
 
 ```bash
-curl  http://localhost:8080/banco/conta/123/saldo
+curl http://localhost:8080/banco/conta/123/saldo
 ```
 
 ### 8.6. Realizar Crédito
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/123/credito \
--H "Content-Type: application/json" \ 
+-H "Content-Type: application/json" \
 -d '{"valor":250.0}'
 ```
 
@@ -167,6 +168,6 @@ curl -X PUT http://localhost:8080/banco/conta/123/credito \
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/123/credito \
--H "Content-Type: application/json" \ 
+-H "Content-Type: application/json" \
 -d '{"valor":-50.0}'
 ```
