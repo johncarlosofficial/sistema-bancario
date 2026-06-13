@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.banco.dto.ContaDTO;
+import com.banco.dto.TaxaDTO;
 import com.banco.dto.ValorDTO;
 import com.banco.dto.TransferenciaDTO;
 import com.banco.service.ContaService;
@@ -85,6 +86,17 @@ public class ContaController {
                 transferenciaDTO.getTo(),
                 transferenciaDTO.getAmount()
         );
+        if (resultado.contains("sucesso")) {
+            return ResponseEntity.ok(resultado);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resultado);
+        }
+    }
+
+    // Rende juros para contas poupança
+    @PutMapping("/rendimento")
+    public ResponseEntity<?> renderJuros(@RequestBody TaxaDTO taxaDTO) {
+        String resultado = contaService.renderJuros(taxaDTO.getTaxa());
         if (resultado.contains("sucesso")) {
             return ResponseEntity.ok(resultado);
         } else {

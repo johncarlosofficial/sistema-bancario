@@ -193,4 +193,16 @@ class ContaServiceTest {
         assertEquals(1300.0, contaDestino.getSaldo());
     }
 
+    @Test
+    void deveRenderJurosCorretamenteParaContasPoupanca() {
+        contaService.cadastrarConta("906", "2", 1000.0); // Poupança
+        
+        // Render 5% de juros (0.05)
+        String resultado = contaService.renderJuros(0.05);
+        assertEquals("Taxa aplicada com sucesso em 1 contas poupança.", resultado);
+        
+        Conta poupanca = contaService.consultarConta("906");
+        assertEquals(1050.0, poupanca.getSaldo());
+    }
 }
+
