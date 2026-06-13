@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.banco.dto.ContaDTO;
-import com.banco.dto.CreditoDTO;
+import com.banco.dto.ValorDTO;
 import com.banco.dto.TransferenciaDTO;
 import com.banco.service.ContaService;
 
@@ -57,11 +57,23 @@ public class ContaController {
 
     // Aplica um crédito à conta através do serviço de negócio.
     @PutMapping("/{id}/credito")
-    public ResponseEntity<?> realizarCredito(@PathVariable String id, @RequestBody CreditoDTO creditoDTO) {
+    public ResponseEntity<?> realizarCredito(@PathVariable String id, @RequestBody ValorDTO valorDTO) {
         try {
-            return ResponseEntity.ok(contaService.realizarCreditoDetalhado(id, creditoDTO.getValor()));
+            return ResponseEntity.ok(contaService.realizarCreditoDetalhado(id, valorDTO.getValor()));
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+        }
+    }
+
+    // Aplica um débito à conta através do serviço de negócio.
+    @PutMapping("/{id}/debito")
+    public ResponseEntity<?> realizarDebito(@PathVariable String id, @RequestBody ValorDTO valorDTO) {
+        String resultado = contaService.realizarDebito(id, valorDTO.getValor());
+        
+        if (resultado.contains("sucesso")) {
+            return ResponseEntity.ok(resultado);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resultado);
         }
     }
 

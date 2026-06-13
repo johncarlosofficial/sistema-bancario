@@ -135,6 +135,36 @@ class ContaServiceTest {
     }
 
     @Test
+    void deveRealizarDebitoNormal() {
+        contaService.cadastrarConta("800", "1", 1000.0);
+        
+        String resultado = contaService.realizarDebito("800", 250.0);
+        
+        assertEquals("Débito realizado com sucesso! Novo saldo: R$ 750.0", resultado);
+        assertEquals(750.0, contaService.consultarSaldo("800"));
+    }
+
+    @Test
+    void deveFalharAoRealizarDebitoComValorNegativo() {
+        contaService.cadastrarConta("801", "1", 1000.0);
+        
+        String resultado = contaService.realizarDebito("801", -50.0);
+        
+        assertEquals("O valor do débito deve ser maior que zero.", resultado);
+        assertEquals(1000.0, contaService.consultarSaldo("801")); // Garante que o saldo não mudou
+    }
+
+    @Test
+    void naoDevePermitirSaldoNegativoEmContaPoupancaNoDebito() {
+        contaService.cadastrarConta("802", "2", 500.0); // Tipo 2 = Poupança
+        
+        String resultado = contaService.realizarDebito("802", 600.0);
+        
+        assertEquals("Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.", resultado);
+        assertEquals(500.0, contaService.consultarSaldo("802")); // Garante que o saldo não mudou
+    }
+
+    @Test
     void deveFalharAoRealizarTransferenciaComValorNegativo() {
         contaService.cadastrarConta("900", "1", 1000.0);
         contaService.cadastrarConta("901", "1", 1000.0);
