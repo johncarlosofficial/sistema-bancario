@@ -133,4 +133,34 @@ class ContaServiceTest {
         assertInstanceOf(ContaBonus.class, conta);
         assertEquals(12, ((ContaBonus) conta).getPontos());
     }
+
+    @Test
+    void deveFalharAoRealizarTransferenciaComValorNegativo() {
+        contaService.cadastrarConta("900", "1", 1000.0);
+        contaService.cadastrarConta("901", "1", 1000.0);
+        String resultado = contaService.realizarTransferencia("900", "901", -100.0);
+        assertEquals("O valor da transferência deve ser maior que zero.", resultado);
+    }
+
+    @Test
+    void naoDevePermitirSaldoNegativoEmContaPoupancaNaTransferencia() {
+        contaService.cadastrarConta("902", "2", 500.0); // Origem Poupança
+        contaService.cadastrarConta("903", "1", 1000.0); // Destino Corrente
+        String resultado = contaService.realizarTransferencia("902", "903", 600.0);
+        assertEquals("Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.", resultado);
+    }
+
+    @Test
+    void deveAplicarBonificacaoParaContaBonusAoReceberTransferencia() {
+        contaService.cadastrarConta("904", "1", 1000.0); // Origem
+        contaService.cadastrarConta("905", "3", 1000.0); // Destino Bônus (Inicia com 10 pontos)
+        
+        contaService.realizarTransferencia("904", "905", 300.0);
+        
+        // 300 / 150 = 2 pontos adicionais (regra da classe ContaBonus)
+        ContaBonus contaDestino = (ContaBonus) contaService.consultarConta("905");
+        assertEquals(12, contaDestino.getPontos());
+        assertEquals(1300.0, contaDestino.getSaldo());
+    }
+
 }

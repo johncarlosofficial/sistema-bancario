@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.banco.dto.ContaDTO;
 import com.banco.dto.CreditoDTO;
+import com.banco.dto.TransferenciaDTO;
 import com.banco.service.ContaService;
 
 @RestController
@@ -63,4 +64,20 @@ public class ContaController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
         }
     }
+
+    // Realiza transferência entre contas
+    @PutMapping("/transferencia")
+    public ResponseEntity<?> realizarTransferencia(@RequestBody TransferenciaDTO transferenciaDTO) {
+        String resultado = contaService.realizarTransferencia(
+                transferenciaDTO.getFrom(),
+                transferenciaDTO.getTo(),
+                transferenciaDTO.getAmount()
+        );
+        if (resultado.contains("sucesso")) {
+            return ResponseEntity.ok(resultado);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resultado);
+        }
+    }
+
 }
