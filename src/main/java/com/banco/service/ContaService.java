@@ -121,85 +121,86 @@ public class ContaService {
     }
 
     // Realiza débito (subtração de saldo)
-    public String realizarDebito(String numero, double valor) {
-
-        // Valor deve ser positivo
+    public ContaResponseDTO realizarDebito(String numero, double valor) {
         if (valor <= 0) {
-            return "O valor do débito deve ser maior que zero.";
+            throw new IllegalArgumentException("O valor do débito deve ser maior que zero.");
         }
 
-        Conta conta = contaDAO.buscarPorNumero(numero);
+        Conta conta = buscarContaOuLancarExcecao(numero);
 
-        if (conta == null) {
-            return "Conta não encontrada.";
-        }
-
-        //se for conta simples ou bônus, pode ficar até -1000
         if ((conta instanceof ContaCorrente || conta instanceof ContaBonus) && (conta.getSaldo() - valor < -1000)) {
-            return "Saldo insuficiente para realizar o débito. A conta pode ficar no máximo com saldo negativo de R$ -1000.";
+            throw new IllegalArgumentException("Saldo insuficiente para realizar o débito. A conta pode ficar no máximo com saldo negativo de R$ -1000.");
         }
 
-        //conta poupança não pode ficar negativa
         if (conta instanceof ContaPoupanca && (conta.getSaldo() - valor < 0)) {
-            return "Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.";
+            throw new IllegalArgumentException("Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.");
         }
 
-        // Subtrai valor do saldo (permitindo saldo negativo)
         conta.setSaldo(conta.getSaldo() - valor);
 
-        return "Débito realizado com sucesso! Novo saldo: R$ " + conta.getSaldo();
+        // Retorna o DTO bonitinho igual ao crédito
+        ContaResponseDTO response = new ContaResponseDTO();
+        response.setNumero(conta.getNumero());
+        response.setSaldo(conta.getSaldo());
+        response.setTipoConta(obterTipoConta(conta));
+        if (conta instanceof ContaBonus bonus) {
+            response.setBonus(bonus.getPontos());
+        }
+        return response;
     }
 
-    public String realizarTransferencia(String origem, String destino, double valor){
-      
-        // Valor deve ser positivo
+    // Realiza a transferência lançando exceções para regras de negócio não atendidas
+    public ContaResponseDTO realizarTransferencia(String origem, String destino, double valor){
         if (valor <= 0) {
-            return "O valor da transferência deve ser maior que zero.";
+            throw new IllegalArgumentException("O valor da transferência deve ser maior que zero.");
         }
 
-        Conta contaOrigem = contaDAO.buscarPorNumero(origem);
-        Conta contaDestino = contaDAO.buscarPorNumero(destino);
-
-        // Verifica existência das contas
-        if (contaOrigem == null) {
-            return "Conta de origem não encontrada.";
-        }
-        if (contaDestino == null) {
-            return "Conta de destino não encontrada.";
-        }
-
-        //verifica se é a mesma conta
         if (origem.equals(destino)) {
-            return "Conta de origem e destino devem ser diferentes.";
+            throw new IllegalArgumentException("Conta de origem e destino devem ser diferentes.");
         }
 
-        //se for conta simples ou bônus, pode ficar até -1000
+        Conta contaOrigem = buscarContaOuLancarExcecao(origem);
+        Conta contaDestino = buscarContaOuLancarExcecao(destino);
+
         if ((contaOrigem instanceof ContaCorrente || contaOrigem instanceof ContaBonus) && (contaOrigem.getSaldo() - valor < -1000)) {
-            return "Saldo insuficiente para realizar a transferência. A conta pode ficar no máximo com saldo negativo de R$ -1000.";
+            throw new IllegalArgumentException("Saldo insuficiente para realizar a transferência. A conta pode ficar no máximo com saldo negativo de R$ -1000.");
         }
-        //conta poupança não pode ficar negativa
+        
         if (contaOrigem instanceof ContaPoupanca && (contaOrigem.getSaldo() - valor < 0)) {
-            return "Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.";
+            throw new IllegalArgumentException("Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.");
         }
 
-        //verifica saldo suficiente na conta de origem
         if (contaOrigem.getSaldo() < valor) {
-            return "Saldo insuficiente para realizar a transferência.";
+            throw new IllegalArgumentException("Saldo insuficiente para realizar a transferência.");
         }
-        // Realiza débito na conta de origem
+
+        // Realiza débito na conta de origem e crédito na de destino
         contaOrigem.setSaldo(contaOrigem.getSaldo() - valor);
-        // Realiza crédito na conta de destino
         contaDestino.setSaldo(contaDestino.getSaldo() + valor);
 
         if (contaDestino instanceof ContaBonus bonus) {
             bonus.adicionarPontosPorTransferenciaRecebida(valor);
         }
 
-        return "Transferência realizada com sucesso! Novo saldo da conta " + origem + ": R$ " + contaOrigem.getSaldo();
+        // Retorna o resumo da conta de origem atualizado
+        ContaResponseDTO response = new ContaResponseDTO();
+        response.setNumero(contaOrigem.getNumero());
+        response.setSaldo(contaOrigem.getSaldo());
+        response.setTipoConta(obterTipoConta(contaOrigem));
+        
+        if (contaOrigem instanceof ContaBonus bonus) {
+            response.setBonus(bonus.getPontos());
+        }
+        
+        return response;
     }
 
-    // Aplica juros à todas as contas-poupança cadastradas
+    // Aplica juros lançando exceção se não houver contas válidas
     public String renderJuros(double taxa){
+        if (taxa <= 0) {
+            throw new IllegalArgumentException("A taxa de rendimento deve ser maior que zero.");
+        }
+
         int contasAtualizadas = 0;
         for(Conta conta : contaDAO.listar()){
             if(conta instanceof ContaPoupanca poupanca){
@@ -207,8 +208,9 @@ public class ContaService {
                 contasAtualizadas++;
             }
         }
+        
         if (contasAtualizadas == 0) {
-            return "Nenhuma conta poupança encontrada para aplicar a taxa.";
+            throw new IllegalArgumentException("Nenhuma conta poupança encontrada para aplicar a taxa.");
         }
 
         return "Taxa aplicada com sucesso em " + contasAtualizadas + " contas poupança.";

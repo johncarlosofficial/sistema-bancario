@@ -69,38 +69,34 @@ public class ContaController {
     // Aplica um débito à conta através do serviço de negócio.
     @PutMapping("/{id}/debito")
     public ResponseEntity<?> realizarDebito(@PathVariable String id, @RequestBody ValorDTO valorDTO) {
-        String resultado = contaService.realizarDebito(id, valorDTO.getValor());
-        
-        if (resultado.contains("sucesso")) {
-            return ResponseEntity.ok(resultado);
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resultado);
+        try {
+            return ResponseEntity.ok(contaService.realizarDebito(id, valorDTO.getValor()));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
         }
     }
 
-    // Realiza transferência entre contas
+// Realiza transferência entre contas
     @PutMapping("/transferencia")
     public ResponseEntity<?> realizarTransferencia(@RequestBody TransferenciaDTO transferenciaDTO) {
-        String resultado = contaService.realizarTransferencia(
-                transferenciaDTO.getFrom(),
-                transferenciaDTO.getTo(),
-                transferenciaDTO.getAmount()
-        );
-        if (resultado.contains("sucesso")) {
-            return ResponseEntity.ok(resultado);
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resultado);
+        try {
+            return ResponseEntity.ok(contaService.realizarTransferencia(
+                    transferenciaDTO.getFrom(),
+                    transferenciaDTO.getTo(),
+                    transferenciaDTO.getAmount()
+            ));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
         }
     }
 
     // Rende juros para contas poupança
     @PutMapping("/rendimento")
     public ResponseEntity<?> renderJuros(@RequestBody TaxaDTO taxaDTO) {
-        String resultado = contaService.renderJuros(taxaDTO.getTaxa());
-        if (resultado.contains("sucesso")) {
-            return ResponseEntity.ok(resultado);
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resultado);
+        try {
+            return ResponseEntity.ok(contaService.renderJuros(taxaDTO.getTaxa()));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
         }
     }
 

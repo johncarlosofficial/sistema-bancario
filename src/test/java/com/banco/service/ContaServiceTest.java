@@ -138,9 +138,9 @@ class ContaServiceTest {
     void deveRealizarDebitoNormal() {
         contaService.cadastrarConta("800", "1", 1000.0);
         
-        String resultado = contaService.realizarDebito("800", 250.0);
+        // Teste de sucesso (não deve lançar exceção e deve retornar o DTO atualizado)
+        contaService.realizarDebito("800", 250.0);
         
-        assertEquals("Débito realizado com sucesso! Novo saldo: R$ 750.0", resultado);
         assertEquals(750.0, contaService.consultarSaldo("800"));
     }
 
@@ -148,9 +148,11 @@ class ContaServiceTest {
     void deveFalharAoRealizarDebitoComValorNegativo() {
         contaService.cadastrarConta("801", "1", 1000.0);
         
-        String resultado = contaService.realizarDebito("801", -50.0);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            contaService.realizarDebito("801", -50.0);
+        });
         
-        assertEquals("O valor do débito deve ser maior que zero.", resultado);
+        assertEquals("O valor do débito deve ser maior que zero.", exception.getMessage());
         assertEquals(1000.0, contaService.consultarSaldo("801")); // Garante que o saldo não mudou
     }
 
@@ -158,51 +160,82 @@ class ContaServiceTest {
     void naoDevePermitirSaldoNegativoEmContaPoupancaNoDebito() {
         contaService.cadastrarConta("802", "2", 500.0); // Tipo 2 = Poupança
         
-        String resultado = contaService.realizarDebito("802", 600.0);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            contaService.realizarDebito("802", 600.0);
+        });
         
-        assertEquals("Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.", resultado);
+        assertEquals("Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.", exception.getMessage());
         assertEquals(500.0, contaService.consultarSaldo("802")); // Garante que o saldo não mudou
     }
 
     @Test
-    void deveFalharAoRealizarTransferenciaComValorNegativo() {
+    void deveRealizarTransferenciaNormal() {
         contaService.cadastrarConta("900", "1", 1000.0);
         contaService.cadastrarConta("901", "1", 1000.0);
-        String resultado = contaService.realizarTransferencia("900", "901", -100.0);
-        assertEquals("O valor da transferência deve ser maior que zero.", resultado);
+
+        // Teste de sucesso (não deve lançar exceção)
+        contaService.realizarTransferencia("900", "901", 300.0);
+        
+        assertEquals(700.0, contaService.consultarSaldo("900"));
+        assertEquals(1300.0, contaService.consultarSaldo("901"));
+    }
+
+    @Test
+    void deveFalharAoRealizarTransferenciaComValorNegativo() {
+        contaService.cadastrarConta("902", "1", 1000.0);
+        contaService.cadastrarConta("903", "1", 1000.0);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            contaService.realizarTransferencia("902", "903", -100.0);
+        });
+        
+        assertEquals("O valor da transferência deve ser maior que zero.", exception.getMessage());
     }
 
     @Test
     void naoDevePermitirSaldoNegativoEmContaPoupancaNaTransferencia() {
-        contaService.cadastrarConta("902", "2", 500.0); // Origem Poupança
-        contaService.cadastrarConta("903", "1", 1000.0); // Destino Corrente
-        String resultado = contaService.realizarTransferencia("902", "903", 600.0);
-        assertEquals("Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.", resultado);
+        contaService.cadastrarConta("904", "2", 500.0); // Origem Poupança
+        contaService.cadastrarConta("905", "1", 1000.0); // Destino Corrente
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            contaService.realizarTransferencia("904", "905", 600.0);
+        });
+        
+        assertEquals("Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.", exception.getMessage());
     }
 
     @Test
     void deveAplicarBonificacaoParaContaBonusAoReceberTransferencia() {
-        contaService.cadastrarConta("904", "1", 1000.0); // Origem
-        contaService.cadastrarConta("905", "3", 1000.0); // Destino Bônus (Inicia com 10 pontos)
+        contaService.cadastrarConta("906", "1", 1000.0); // Origem
+        contaService.cadastrarConta("907", "3", 1000.0); // Destino Bônus (Inicia com 10 pontos)
+        contaService.realizarTransferencia("906", "907", 300.0);
         
-        contaService.realizarTransferencia("904", "905", 300.0);
-        
-        // 300 / 150 = 2 pontos adicionais (regra da classe ContaBonus)
-        ContaBonus contaDestino = (ContaBonus) contaService.consultarConta("905");
+        // 300 / 150 = 2 pontos adicionais (total 12)
+        ContaBonus contaDestino = (ContaBonus) contaService.consultarConta("907");
         assertEquals(12, contaDestino.getPontos());
         assertEquals(1300.0, contaDestino.getSaldo());
     }
 
     @Test
     void deveRenderJurosCorretamenteParaContasPoupanca() {
-        contaService.cadastrarConta("906", "2", 1000.0); // Poupança
+    contaService.cadastrarConta("908", "2", 1000.0); // Poupança
         
-        // Render 5% de juros (0.05)
         String resultado = contaService.renderJuros(0.05);
         assertEquals("Taxa aplicada com sucesso em 1 contas poupança.", resultado);
         
-        Conta poupanca = contaService.consultarConta("906");
-        assertEquals(1050.0, poupanca.getSaldo());
+        assertEquals(1050.0, contaService.consultarSaldo("908"));
     }
+
+    @Test
+    void deveFalharAoRenderJurosSemContaPoupanca() {
+        contaService.cadastrarConta("909", "1", 1000.0); // Corrente
+        
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            contaService.renderJuros(0.05);
+        });
+        
+        assertEquals("Nenhuma conta poupança encontrada para aplicar a taxa.", exception.getMessage());
+    }
+
 }
 
