@@ -1,11 +1,11 @@
 package com.banco.dto;
 
 // Recebe o valor do crédito no corpo da requisição da API.
-public class CreditoDTO {
+public class ValorDTO {
 
     private double valor;
 
-    public CreditoDTO() {
+    public ValorDTO() {
     }
 
     public double getValor() {

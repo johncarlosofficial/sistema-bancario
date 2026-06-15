@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.banco.dto.ContaDTO;
-import com.banco.dto.CreditoDTO;
+import com.banco.dto.TaxaDTO;
+import com.banco.dto.ValorDTO;
+import com.banco.dto.TransferenciaDTO;
 import com.banco.service.ContaService;
 
 @RestController
@@ -56,11 +58,46 @@ public class ContaController {
 
     // Aplica um crédito à conta através do serviço de negócio.
     @PutMapping("/{id}/credito")
-    public ResponseEntity<?> realizarCredito(@PathVariable String id, @RequestBody CreditoDTO creditoDTO) {
+    public ResponseEntity<?> realizarCredito(@PathVariable String id, @RequestBody ValorDTO valorDTO) {
         try {
-            return ResponseEntity.ok(contaService.realizarCreditoDetalhado(id, creditoDTO.getValor()));
+            return ResponseEntity.ok(contaService.realizarCreditoDetalhado(id, valorDTO.getValor()));
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
         }
     }
+
+    // Aplica um débito à conta através do serviço de negócio.
+    @PutMapping("/{id}/debito")
+    public ResponseEntity<?> realizarDebito(@PathVariable String id, @RequestBody ValorDTO valorDTO) {
+        try {
+            return ResponseEntity.ok(contaService.realizarDebito(id, valorDTO.getValor()));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+        }
+    }
+
+// Realiza transferência entre contas
+    @PutMapping("/transferencia")
+    public ResponseEntity<?> realizarTransferencia(@RequestBody TransferenciaDTO transferenciaDTO) {
+        try {
+            return ResponseEntity.ok(contaService.realizarTransferencia(
+                    transferenciaDTO.getFrom(),
+                    transferenciaDTO.getTo(),
+                    transferenciaDTO.getAmount()
+            ));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+        }
+    }
+
+    // Rende juros para contas poupança
+    @PutMapping("/rendimento")
+    public ResponseEntity<?> renderJuros(@RequestBody TaxaDTO taxaDTO) {
+        try {
+            return ResponseEntity.ok(contaService.renderJuros(taxaDTO.getTaxa()));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+        }
+    }
+
 }
