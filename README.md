@@ -171,3 +171,63 @@ curl -X PUT http://localhost:8080/banco/conta/123/credito \
 -H "Content-Type: application/json" \
 -d '{"valor":-50.0}'
 ```
+
+### 8.8. Realizar Débito
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/123/debito \
+-H "Content-Type: application/json" \
+-d '{"valor":100.0}'
+```
+
+### 8.9. Testar Erro - Débito com valor maior que o saldo
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/123/debito \
+-H "Content-Type: application/json" \
+-d '{"valor":999999.0}'
+```
+
+### 8.10. Realizar Transferência entre Contas
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/transferencia \
+-H "Content-Type: application/json" \
+-d '{
+  "from": "123",
+  "to": "456",
+  "amount": 150.0
+}'
+```
+
+### 8.11. Testar Erro - Transferência com saldo insuficiente
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/transferencia \
+-H "Content-Type: application/json" \
+-d '{
+  "from": "123",
+  "to": "456",
+  "amount": 999999.0
+}'
+```
+
+### 8.12. Aplicar Rendimento (Juros)
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/rendimento \
+-H "Content-Type: application/json" \
+-d '{
+  "taxa": 0.05
+}'
+```
+
+### 8.13. Testar Erro - Taxa inválida (negativa)
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/rendimento \
+-H "Content-Type: application/json" \
+-d '{
+  "taxa": -0.1
+}'
+```
