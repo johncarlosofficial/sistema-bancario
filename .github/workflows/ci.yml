@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write   # necessário para criar e enviar tags git
+  pull-requests: read   # necessário para identificar o PR que gerou o merge na staging
 
 env:
   JAVA_VERSION: "17"
@@ -84,6 +85,9 @@ jobs:
     name: Criar tag de build
     runs-on: ubuntu-latest
     needs: docker
+    concurrency:
+      group: git-tags-${{ github.repository }}
+      cancel-in-progress: false
     # Só executa quando código é enviado diretamente à main (não em PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
@@ -98,7 +102,7 @@ jobs:
       - name: Gerar tag com timestamp
         id: tag
         run: |
-          TAG="build-$(date -u +'%Y%m%d-%H%M%S')"
+          TAG="build-$(date -u +'%Y%m%d-%H%M%S')-${GITHUB_RUN_NUMBER}"
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
@@ -107,6 +111,11 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git fetch origin --tags
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG já existe no remoto. Abortando para evitar sobrescrita."
+            exit 1
+          fi
           git tag $TAG
           git push origin $TAG
 
@@ -125,8 +134,11 @@ jobs:
     name: Release Candidate (staging)
     runs-on: ubuntu-latest
     needs: docker
+    concurrency:
+      group: git-tags-${{ github.repository }}
+      cancel-in-progress: false
     # Só executa quando há push na staging (= PR foi aceito/merged)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging' && github.event.forced == false && github.event.deleted == false
 
     steps:
       # Histórico completo necessário para listar e comparar todas as tags RC
@@ -135,22 +147,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Busca todas as tags do repositório remoto para garantir lista atualizada
-      - name: Buscar tags remotas
-        run: git fetch --tags
+      # Busca todas as tags e branches remotas para garantir lista atualizada
+      - name: Buscar tags e branches remotas
+        run: git fetch origin '+refs/heads/*:refs/remotes/origin/*' --tags
 
-      # Detecta qual branch originou o merge usando a mensagem do commit de merge.
-      # O GitHub cria automaticamente commits como "Merge pull request #N from owner/branch"
+      # Detecta qual PR originou o merge usando a API do GitHub.
+      # Pela regra do README, bugfix/* volta para staging e main abre nova RC.
       - name: Identificar branch de origem do merge
         id: tipo
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # Pega a mensagem do commit mais recente (o merge commit)
-          COMMIT_MSG=$(git log -1 --pretty=%s)
-          echo "Commit de merge: $COMMIT_MSG"
+          PR_INFO=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+            --jq 'map(select(.merged_at != null and .base.ref == "staging")) | sort_by(.merged_at) | last // empty | [.number, .head.ref, .base.ref, .merged_at] | @tsv')
 
-          # Extrai o nome da branch de origem da mensagem do merge commit
-          ORIGEM=$(echo "$COMMIT_MSG" | grep -oP '(?<=from )[^ ]+' | awk -F'/' '{print $NF}' || echo "")
+          if [ -z "$PR_INFO" ]; then
+            echo "Nenhum PR merged para staging foi associado ao commit ${GITHUB_SHA}."
+            echo "Push direto, force push ou commit sem PR não pode gerar RC."
+            exit 1
+          fi
+
+          IFS=$'\t' read -r PR_NUMBER ORIGEM BASE MERGED_AT <<< "$PR_INFO"
+
+          echo "PR associado: #$PR_NUMBER"
+          echo "Base do PR: $BASE"
           echo "Branch de origem detectada: $ORIGEM"
+          echo "Merged at: $MERGED_AT"
 
           if [ "$ORIGEM" = "main" ]; then
             echo "tipo=main" >> $GITHUB_OUTPUT
@@ -165,7 +189,7 @@ jobs:
         id: last_tag
         run: |
           # Ordena semanticamente todas as tags rc-* e pega a maior
-          TAG=$(git tag --list "rc-*" --sort=-v:refname | head -n 1 || echo "")
+          TAG=$(git tag --list "rc-*" | grep -E '^rc-[0-9]+\.[0-9]+(\.[0-9]+)?$' | sort -V | tail -n 1 || true)
           echo "Última RC encontrada: $TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
@@ -178,6 +202,11 @@ jobs:
 
           echo "Última tag: $ULTIMA"
           echo "Tipo de origem: $TIPO"
+
+          if [ "$TIPO" != "main" ] && [ "$TIPO" != "bugfix" ]; then
+            echo "Tipo de branch desconhecido, abortando."
+            exit 1
+          fi
 
           if [ -z "$ULTIMA" ]; then
             # ── Nenhuma tag RC existe ainda ──────────────────────────────
@@ -206,7 +235,7 @@ jobs:
               # ex: rc-2.3 → rc-2.3.1  |  rc-2.3.2 → rc-2.3.3
               # Precisamos encontrar a última tag com o mesmo X.Y para pegar o Z correto
               # Busca a maior tag que comece com rc-MAJOR.MINOR
-              ULTIMA_XY=$(git tag --list "rc-$MAJOR.$MINOR*" --sort=-v:refname | head -n 1 || echo "")
+              ULTIMA_XY=$(git tag --list "rc-$MAJOR.$MINOR" "rc-$MAJOR.$MINOR.*" | grep -E "^rc-$MAJOR\.$MINOR(\.[0-9]+)?$" | sort -V | tail -n 1 || true)
               echo "Maior tag com rc-$MAJOR.$MINOR: $ULTIMA_XY"
 
               if [ -z "$ULTIMA_XY" ]; then
@@ -233,6 +262,11 @@ jobs:
             fi
           fi
 
+          if git rev-parse -q --verify "refs/tags/$NOVA" >/dev/null; then
+            echo "Tag $NOVA já existe localmente. Abortando para evitar duplicidade."
+            exit 1
+          fi
+
           echo "Nova tag RC: $NOVA"
           echo "tag=$NOVA" >> $GITHUB_OUTPUT
 
@@ -241,8 +275,14 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git tag ${{ steps.nova_tag.outputs.tag }}
-          git push origin ${{ steps.nova_tag.outputs.tag }}
+          TAG="${{ steps.nova_tag.outputs.tag }}"
+          git fetch origin --tags
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG já existe no remoto. Abortando para evitar sobrescrita."
+            exit 1
+          fi
+          git tag "$TAG"
+          git push origin "refs/tags/$TAG"
 
       # Baixa o artefato JAR gerado pelo job build-test-package para empacotar no zip
       - name: Baixar artefato JAR
