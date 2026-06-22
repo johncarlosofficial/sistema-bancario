@@ -2,22 +2,7 @@
 
 ## 1. Descrição
 
-Este projeto consiste em um sistema bancário simples desenvolvido em **Java**, executado via terminal, com operações básicas de contas.
-
-**Funcionalidades**:
-
-1. Cadastro de conta
-2. Consulta de saldo
-3. Crédito em conta
-4. Débito em conta
-5. Transferência entre contas
-
-**Separação em camadas**:
-
-* **UI (Interface com usuário)**: Interação via terminal
-* **Service (Camada de Negócio)**: Regras e operações do sistema
-
-> Não há persistência em banco de dados.
+Este projeto consiste em um sistema bancário simples desenvolvido em **Java**.
 
 ## 2. Equipe
 
@@ -43,17 +28,7 @@ Este projeto consiste em um sistema bancário simples desenvolvido em **Java**, 
 
 * **`hotfix/`**: Criada a partir da `production` para correções urgentes;merge na `staging` e na `production`.
 
-## 4. Processo de Desenvolvimento
-
-1. Criar uma issue
-2. Criar a branch adequada
-3. Implementar a solução
-4. Garantir que os testes passam
-5. Abrir Pull Request
-6. Revisão obrigatória
-7. Merge realizado pelo responsável
-
-## 5. Commits
+## 4. Commits
 
 * **Formato**: `tipo: descrição (#issue)`
 
@@ -70,9 +45,7 @@ Este projeto consiste em um sistema bancário simples desenvolvido em **Java**, 
 feat: implementa cadastro de conta (#5)
 ```
 
-> Não são permitidos commits com formato incorreto ou sem vínculo com issue.
-
-## 6. Regras
+## 5. Regras
 
 * Use **feature branches** (*sem* commits diretos na `main`);
 * Teste todos os commits, não apenas os da `main`;
@@ -81,37 +54,16 @@ feat: implementa cadastro de conta (#5)
 * Mensagens devem refletir claramente a intenção;
 * As branches **NÃO** devem ser removidas – **nem mesmo as auxiliares** – durante todo o desenvolvimento do projeto.
 
-## 7. Requisitos
+## 6. VSCode
 
-* Java JDK 17+
-* Maven 3+
-
-## 8. Execução
-
-* No terminal, clone o repositório:
-  
-  ```bash
-  git clone https://github.com/johncarlosofficial/sistema-bancario.git
-  ```
-
-* Abra o projeto no [VSCode](https://code.visualstudio.com/).
-
-* No terminal do VSCode, execute o projeto com Maven:
-
-  ```bash
-  mvn clean compile exec:java
-  ```
-
-### 8.1. VSCode
-
-#### 8.1.1. Extensões Recomendadas
+### 6.1. Extensões Recomendadas
 
 * [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack);
 * [Maven for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven);
 * [Debugger for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-debug);
 * [Language Support for Java (by Red Hat)](https://marketplace.visualstudio.com/items?itemName=redhat.java).
 
-#### 8.1.2. Problemas Comuns
+### 6.2. Problemas Comuns
 
 Se houver warnings incorretos do Java no VSCode, limpe o workspace do Java Language Server:
 
@@ -120,3 +72,162 @@ Se houver warnings incorretos do Java no VSCode, limpe o workspace do Java Langu
    * Windows/Linux: `Ctrl + Shift + P`
 2. Digite: `Java: Clean Java Language Server Workspace`
 3. Confirme e reinicie quando solicitado
+
+## 7. Execução
+
+### 7.1. Clonar o projeto
+
+```bash
+git clone https://github.com/johncarlosofficial/sistema-bancario.git
+cd sistema-bancario
+```
+
+### 7.2. Executar os testes
+
+Antes de subir a aplicação, execute os testes para validar que as principais funcionalidades continuam funcionando corretamente.
+
+```bash
+mvn test
+```
+
+### 7.3. Gerar a imagem Docker
+
+O Docker é utilizado para empacotar a aplicação junto com todas as dependências necessárias para sua execução. Isso garante que o sistema rode da mesma forma em qualquer ambiente, sem depender da configuração da máquina de quem está executando.
+
+```bash
+docker build -t sistema-bancario .
+```
+
+### 7.4. Subir o container
+
+Após gerar a imagem, crie e execute um container. O container é uma instância da aplicação em execução, disponibilizando a API na porta 8080.
+
+```bash
+docker run -d --name sistema-bancario -p 8080:8080 sistema-bancario
+```
+
+## 8. Endpoints
+
+### 8.1. Cadastrar Conta Simples
+
+```bash
+curl -X POST http://localhost:8080/banco/conta \
+-H "Content-Type: application/json" \
+-d '{
+  "numero": "123",
+  "tipoConta": "1",
+  "saldoInicial": 1000
+}'
+```
+
+### 8.2. Cadastrar Conta Poupança
+
+```bash
+curl -X POST http://localhost:8080/banco/conta \
+-H "Content-Type: application/json" \
+-d '{
+  "numero": "456",
+  "tipoConta": "2",
+  "saldoInicial": 500
+}'
+```
+
+### 8.3. Cadastrar Conta Bônus
+
+```bash
+curl -X POST http://localhost:8080/banco/conta \
+-H "Content-Type: application/json" \
+-d '{
+  "numero": "789",
+  "tipoConta": "3",
+  "saldoInicial": 2000
+}'
+```
+
+### 8.4. Consultar Conta
+
+```bash
+curl  http://localhost:8080/banco/conta/123
+```
+
+### 8.5. Consultar saldo
+
+```bash
+curl http://localhost:8080/banco/conta/123/saldo
+```
+
+### 8.6. Realizar Crédito
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/123/credito \
+-H "Content-Type: application/json" \
+-d '{"valor":250.0}'
+```
+
+### 8.7. Testar Erro - Crédito Negativo
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/123/credito \
+-H "Content-Type: application/json" \
+-d '{"valor":-50.0}'
+```
+
+### 8.8. Realizar Débito
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/123/debito \
+-H "Content-Type: application/json" \
+-d '{"valor":100.0}'
+```
+
+### 8.9. Testar Erro - Débito com valor maior que o saldo
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/123/debito \
+-H "Content-Type: application/json" \
+-d '{"valor":999999.0}'
+```
+
+### 8.10. Realizar Transferência entre Contas
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/transferencia \
+-H "Content-Type: application/json" \
+-d '{
+  "from": "123",
+  "to": "456",
+  "amount": 150.0
+}'
+```
+
+### 8.11. Testar Erro - Transferência com saldo insuficiente
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/transferencia \
+-H "Content-Type: application/json" \
+-d '{
+  "from": "123",
+  "to": "456",
+  "amount": 999999.0
+}'
+```
+
+### 8.12. Aplicar Rendimento (Juros)
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/rendimento \
+-H "Content-Type: application/json" \
+-d '{
+  "taxa": 0.05
+}'
+```
+
+### 8.13. Testar Erro - Taxa inválida (negativa)
+
+```bash
+curl -X PUT http://localhost:8080/banco/conta/rendimento \
+-H "Content-Type: application/json" \
+-d '{
+  "taxa": -0.1
+}'
+```
