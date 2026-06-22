@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 permissions:
   contents: write
@@ -81,3 +81,30 @@ jobs:
 
           git tag $TAG
           git push origin $TAG
+  rc:
+      name: Release Candidate (staging)
+      runs-on: ubuntu-latest
+      needs: docker
+      if: github.event_name == 'pull_request' && github.base_ref == 'staging'
+
+      steps:
+        - name: Baixar código (com histórico completo)
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+
+        - name: Identificar tipo de PR
+          id: tipo
+          run: |
+            echo "Origem: ${{ github.head_ref }}"
+
+            if [ "${{ github.head_ref }}" = "main" ]; then
+              echo "tipo=main" >> $GITHUB_OUTPUT
+            elif [[ "${{ github.head_ref }}" == bugfix* ]]; then
+              echo "tipo=bugfix" >> $GITHUB_OUTPUT
+            else
+              echo "tipo=outro" >> $GITHUB_OUTPUT
+            fi
+
+        - name: Mostrar tipo detectado
+          run: echo "Tipo detectado: ${{ steps.tipo.outputs.tipo }}"
