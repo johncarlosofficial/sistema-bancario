@@ -19,10 +19,9 @@ permissions:
 env:
   JAVA_VERSION: "17"
 
-# ══════════════════════════════════════════════════════════════════════
+
 # JOB 1 – BUILD, TESTES E EMPACOTAMENTO
 # Executado em TODOS os eventos (push e pull_request)
-# ══════════════════════════════════════════════════════════════════════
 jobs:
   build-test-package:
     name: Build, Teste e Package
@@ -64,10 +63,9 @@ jobs:
           name: sistema-bancario
           path: target/*.jar
 
-# ══════════════════════════════════════════════════════════════════════
+
 # JOB 2 – BUILD DA IMAGEM DOCKER
 # Depende do job anterior; garante que só builda imagem se tudo passou
-# ══════════════════════════════════════════════════════════════════════
   docker:
     name: Build Docker
     runs-on: ubuntu-latest
@@ -82,10 +80,10 @@ jobs:
       - name: Build da imagem Docker
         run: docker build -t sistema-bancario:${{ github.sha }} .
 
-# ══════════════════════════════════════════════════════════════════════
+
 # JOB 3 – TAG DE BUILD (apenas push na main)
 # Cria uma tag com timestamp para identificar cada build da branch principal
-# ══════════════════════════════════════════════════════════════════════
+
   tag:
     name: Criar tag de build
     runs-on: ubuntu-latest
@@ -116,7 +114,7 @@ jobs:
           git tag $TAG
           git push origin $TAG
 
-# ══════════════════════════════════════════════════════════════════════
+# 
 # JOB 4 – RELEASE CANDIDATE (push na staging = PR aceito)
 #
 # ATENÇÃO: O evento correto é push na staging, NÃO pull_request.
@@ -126,7 +124,7 @@ jobs:
 # Regras de versionamento:
 #   • PR vindo da main  → incrementa Y → rc-X.(Y+1)
 #   • PR vindo de bugfix* → incrementa Z → rc-X.Y.(Z+1)
-# ══════════════════════════════════════════════════════════════════════
+
   rc:
     name: Release Candidate (staging)
     runs-on: ubuntu-latest
@@ -267,7 +265,7 @@ jobs:
           zip -r ${{ steps.nova_tag.outputs.tag }}.zip target/*.jar
 
       # Disponibiliza o .zip como artefato para download na aba "Artifacts" do workflow
-      # O nome do artefato é idêntico ao nome da tag RC (requisito da especificação)
+      # O nome do artefato é idêntico ao nome da tag RC 
       - name: Upload artifact RC
         uses: actions/upload-artifact@v4
         with:
