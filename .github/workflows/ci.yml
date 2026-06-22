@@ -1,26 +1,38 @@
 name: Pipeline CI
 
+# ─────────────────────────────────────────────
+# QUANDO O PIPELINE EXECUTA
+# ─────────────────────────────────────────────
+# - push na main → roda build + testes + empacota + tag de build
+# - push na staging → significa que um PR foi ACEITO (merged) nela,
+#   então é aqui que criamos as tags RC (rc-X.Y ou rc-X.Y.Z)
+# - pull_request aberto contra main ou staging → só roda build + testes (sem criar tags)
 on:
   push:
-    branches: [main]
+    branches: [main, staging]       # dispara ao fazer merge (aceitar PR)
   pull_request:
-    branches: [main]
+    branches: [main, staging]       # dispara ao abrir/atualizar PR
 
 permissions:
-  contents: write
+  contents: write   # necessário para criar e enviar tags git
 
 env:
   JAVA_VERSION: "17"
 
+
+# JOB 1 – BUILD, TESTES E EMPACOTAMENTO
+# Executado em TODOS os eventos (push e pull_request)
 jobs:
   build-test-package:
     name: Build, Teste e Package
     runs-on: ubuntu-latest
 
     steps:
+      # Baixa o código-fonte do repositório
       - name: Baixar código
         uses: actions/checkout@v4
 
+      # Configura o JDK 17 com cache do Maven para acelerar builds seguintes
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
@@ -28,21 +40,28 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
+      # Resolve dependências e compila o código-fonte
       - name: Resolver dependências e compilar
         run: mvn -B clean compile
 
+      # Executa todos os testes unitários do projeto
       - name: Executar testes unitários
         run: mvn -B test
 
+      # Gera o .jar final sem rodar testes novamente (já foram executados acima)
       - name: Empacotar aplicação
         run: mvn -B package -DskipTests
 
-      - name: Upload do artefato
+      # Disponibiliza o .jar como artefato para ser baixado ou usado por outros jobs
+      - name: Upload do artefato JAR
         uses: actions/upload-artifact@v4
         with:
           name: sistema-bancario
           path: target/*.jar
 
+
+# JOB 2 – BUILD DA IMAGEM DOCKER
+# Depende do job anterior; garante que só builda imagem se tudo passou
   docker:
     name: Build Docker
     runs-on: ubuntu-latest
@@ -52,21 +71,30 @@ jobs:
       - name: Baixar código
         uses: actions/checkout@v4
 
+      # Constrói a imagem Docker usando o Dockerfile do repositório
+      # A tag usa o SHA do commit para rastreabilidade exata
       - name: Build da imagem Docker
         run: docker build -t sistema-bancario:${{ github.sha }} .
+
+
+# JOB 3 – TAG DE BUILD (apenas push na main)
+# Cria uma tag com timestamp para identificar cada build da branch principal
 
   tag:
     name: Criar tag de build
     runs-on: ubuntu-latest
     needs: docker
+    # Só executa quando código é enviado diretamente à main (não em PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
+      # fetch-depth: 0 garante histórico completo para operações de tag
       - name: Baixar código
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # Gera uma tag no formato build-YYYYMMDD-HHMMSS (ex: build-20240615-143022)
       - name: Gerar tag com timestamp
         id: tag
         run: |
@@ -74,10 +102,168 @@ jobs:
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
+      # Configura o git e envia a nova tag para o repositório remoto
       - name: Criar e enviar tag
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-
           git tag $TAG
           git push origin $TAG
+
+# 
+# JOB 4 – RELEASE CANDIDATE (push na staging = PR aceito)
+#
+# ATENÇÃO: O evento correto é push na staging, NÃO pull_request.
+# Quando um PR é ACEITO (merged), o GitHub faz um push na branch de destino.
+# Por isso usamos "push" na staging para detectar o merge do PR.
+#
+# Regras de versionamento:
+#   • PR vindo da main  → incrementa Y → rc-X.(Y+1)
+#   • PR vindo de bugfix* → incrementa Z → rc-X.Y.(Z+1)
+
+  rc:
+    name: Release Candidate (staging)
+    runs-on: ubuntu-latest
+    needs: docker
+    # Só executa quando há push na staging (= PR foi aceito/merged)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+
+    steps:
+      # Histórico completo necessário para listar e comparar todas as tags RC
+      - name: Baixar código (histórico completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Busca todas as tags do repositório remoto para garantir lista atualizada
+      - name: Buscar tags remotas
+        run: git fetch --tags
+
+      # Detecta qual branch originou o merge usando a mensagem do commit de merge.
+      # O GitHub cria automaticamente commits como "Merge pull request #N from owner/branch"
+      - name: Identificar branch de origem do merge
+        id: tipo
+        run: |
+          # Pega a mensagem do commit mais recente (o merge commit)
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          echo "Commit de merge: $COMMIT_MSG"
+
+          # Extrai o nome da branch de origem da mensagem do merge commit
+          ORIGEM=$(echo "$COMMIT_MSG" | grep -oP '(?<=from )[^ ]+' | awk -F'/' '{print $NF}' || echo "")
+          echo "Branch de origem detectada: $ORIGEM"
+
+          if [ "$ORIGEM" = "main" ]; then
+            echo "tipo=main" >> $GITHUB_OUTPUT
+          elif [[ "$ORIGEM" == bugfix* ]]; then
+            echo "tipo=bugfix" >> $GITHUB_OUTPUT
+          else
+            echo "tipo=outro" >> $GITHUB_OUTPUT
+          fi
+
+      # Lista todas as tags rc-* existentes e seleciona a de maior versão
+      - name: Buscar última tag RC
+        id: last_tag
+        run: |
+          # Ordena semanticamente todas as tags rc-* e pega a maior
+          TAG=$(git tag --list "rc-*" --sort=-v:refname | head -n 1 || echo "")
+          echo "Última RC encontrada: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      # Calcula a próxima tag RC com base no tipo de origem e na última tag existente
+      - name: Gerar próxima versão RC
+        id: nova_tag
+        run: |
+          ULTIMA="${{ steps.last_tag.outputs.tag }}"
+          TIPO="${{ steps.tipo.outputs.tipo }}"
+
+          echo "Última tag: $ULTIMA"
+          echo "Tipo de origem: $TIPO"
+
+          if [ -z "$ULTIMA" ]; then
+            # ── Nenhuma tag RC existe ainda ──────────────────────────────
+            # main → primeira versão minor: rc-1.0
+            # bugfix → já pressupõe um rc-X.Y base, cria rc-1.0.1 como fallback
+            if [ "$TIPO" = "main" ]; then
+              NOVA="rc-1.0"
+            else
+              NOVA="rc-1.0.1"
+            fi
+          else
+            # ── Extrai componentes X, Y, Z da última tag (remove prefixo "rc-") ──
+            BASE=$(echo "$ULTIMA" | sed 's/^rc-//')
+            MAJOR=$(echo "$BASE" | awk -F. '{print $1}')
+            MINOR=$(echo "$BASE" | awk -F. '{print $2}')
+            PATCH=$(echo "$BASE" | awk -F. '{print $3}')  # pode ser vazio
+
+            if [ "$TIPO" = "main" ]; then
+              # Início de nova estabilização: incrementa Y, remove Z
+              # ex: rc-2.3 → rc-2.4  |  rc-2.3.2 → rc-2.4
+              MINOR=$((MINOR + 1))
+              NOVA="rc-$MAJOR.$MINOR"
+
+            elif [ "$TIPO" = "bugfix" ]; then
+              # Bugfix durante estabilização: incrementa Z
+              # ex: rc-2.3 → rc-2.3.1  |  rc-2.3.2 → rc-2.3.3
+              # Precisamos encontrar a última tag com o mesmo X.Y para pegar o Z correto
+              # Busca a maior tag que comece com rc-MAJOR.MINOR
+              ULTIMA_XY=$(git tag --list "rc-$MAJOR.$MINOR*" --sort=-v:refname | head -n 1 || echo "")
+              echo "Maior tag com rc-$MAJOR.$MINOR: $ULTIMA_XY"
+
+              if [ -z "$ULTIMA_XY" ]; then
+                # Não existe rc-X.Y ainda, usa o da última tag como base
+                ULTIMA_XY="$ULTIMA"
+              fi
+
+              BASE_XY=$(echo "$ULTIMA_XY" | sed 's/^rc-//')
+              PATCH_ATUAL=$(echo "$BASE_XY" | awk -F. '{print $3}')
+
+              if [ -z "$PATCH_ATUAL" ]; then
+                PATCH_ATUAL=0   # rc-X.Y sem Z → Z assume valor 0
+              fi
+
+              PATCH_NOVO=$((PATCH_ATUAL + 1))
+              # Usa X.Y da última tag rc-X.Y.* encontrada
+              XY_BASE=$(echo "$BASE_XY" | awk -F. '{print $1"."$2}')
+              NOVA="rc-$XY_BASE.$PATCH_NOVO"
+
+            else
+              # Branch de origem desconhecida (nem main nem bugfix*)
+              echo "Tipo de branch desconhecido, abortando."
+              exit 1
+            fi
+          fi
+
+          echo "Nova tag RC: $NOVA"
+          echo "tag=$NOVA" >> $GITHUB_OUTPUT
+
+      # Cria a tag no git e envia para o repositório remoto
+      - name: Criar tag RC
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag ${{ steps.nova_tag.outputs.tag }}
+          git push origin ${{ steps.nova_tag.outputs.tag }}
+
+      # Baixa o artefato JAR gerado pelo job build-test-package para empacotar no zip
+      - name: Baixar artefato JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: sistema-bancario
+          path: target/
+
+      # Instala o zip (não disponível por padrão no ubuntu-latest)
+      - name: Instalar zip
+        run: sudo apt-get update && sudo apt-get install zip -y
+
+      # Empacota o JAR em um .zip nomeado com a tag RC criada (ex: rc-2.4.zip)
+      - name: Gerar pacote da versão
+        run: |
+          zip -r ${{ steps.nova_tag.outputs.tag }}.zip target/*.jar
+
+      # Disponibiliza o .zip como artefato para download na aba "Artifacts" do workflow
+      # O nome do artefato é idêntico ao nome da tag RC 
+      - name: Upload artifact RC
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.nova_tag.outputs.tag }}
+          path: ${{ steps.nova_tag.outputs.tag }}.zip
