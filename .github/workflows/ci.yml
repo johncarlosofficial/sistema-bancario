@@ -135,21 +135,37 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Busca todas as tags do repositório remoto para garantir lista atualizada
-      - name: Buscar tags remotas
-        run: git fetch --tags
+      # Busca todas as tags e branches remotas para garantir lista atualizada
+      - name: Buscar tags e branches remotas
+        run: git fetch origin '+refs/heads/*:refs/remotes/origin/*' --tags
 
-      # Detecta qual branch originou o merge usando a mensagem do commit de merge.
-      # O GitHub cria automaticamente commits como "Merge pull request #N from owner/branch"
+      # Detecta qual branch originou o merge usando o segundo pai do merge commit.
+      # Pela regra do README, bugfix/* volta para staging e main abre nova RC.
       - name: Identificar branch de origem do merge
         id: tipo
         run: |
-          # Pega a mensagem do commit mais recente (o merge commit)
-          COMMIT_MSG=$(git log -1 --pretty=%s)
-          echo "Commit de merge: $COMMIT_MSG"
+          # HEAD^2 é a ponta da branch de origem em um merge commit
+          if ! SOURCE_SHA=$(git rev-parse HEAD^2 2>/dev/null); then
+            echo "O commit atual não parece ser um merge commit."
+            echo "tipo=outro" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
-          # Extrai o nome da branch de origem da mensagem do merge commit
-          ORIGEM=$(echo "$COMMIT_MSG" | grep -oP '(?<=from )[^ ]+' | awk -F'/' '{print $NF}' || echo "")
+          echo "Commit da branch de origem: $SOURCE_SHA"
+
+          # Encontra a branch remota que aponta para a origem do merge
+          ORIGEM=$(git for-each-ref --format='%(refname:short)' --points-at "$SOURCE_SHA" refs/remotes/origin \
+            | sed 's|^origin/||' \
+            | grep -E '^(main|bugfix/)' \
+            | head -n 1 || true)
+
+          if [ -z "$ORIGEM" ]; then
+            ORIGEM=$(git branch -r --contains "$SOURCE_SHA" \
+              | sed 's|^[ *]*origin/||' \
+              | grep -E '^(main|bugfix/)' \
+              | head -n 1 || true)
+          fi
+
           echo "Branch de origem detectada: $ORIGEM"
 
           if [ "$ORIGEM" = "main" ]; then
