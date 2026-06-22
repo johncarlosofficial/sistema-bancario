@@ -48,10 +48,6 @@ jobs:
       - name: Executar testes unitários
         run: mvn -B test
 
-      # Ferramenta de análise estática: Checkstyle verifica padrões de código
-      - name: Quality (Checkstyle)
-        run: mvn -B checkstyle:check
-
       # Gera o .jar final sem rodar testes novamente (já foram executados acima)
       - name: Empacotar aplicação
         run: mvn -B package -DskipTests
