@@ -9,16 +9,15 @@ name: Pipeline CI
 # - pull_request aberto contra main ou staging → só roda build + testes (sem criar tags)
 on:
   push:
-    branches: [main, staging]       # dispara ao fazer merge (aceitar PR)
+    branches: [main, staging, producao]       # dispara ao fazer merge (aceitar PR)
   pull_request:
-    branches: [main, staging]       # dispara ao abrir/atualizar PR
+    branches: [main, staging, producao]       # dispara ao abrir/atualizar PR
 
 permissions:
   contents: write   # necessário para criar e enviar tags git
 
 env:
   JAVA_VERSION: "17"
-
 
 # JOB 1 – BUILD, TESTES E EMPACOTAMENTO
 # Executado em TODOS os eventos (push e pull_request)
@@ -59,7 +58,6 @@ jobs:
           name: sistema-bancario
           path: target/*.jar
 
-
 # JOB 2 – BUILD DA IMAGEM DOCKER
 # Depende do job anterior; garante que só builda imagem se tudo passou
   docker:
@@ -75,7 +73,6 @@ jobs:
       # A tag usa o SHA do commit para rastreabilidade exata
       - name: Build da imagem Docker
         run: docker build -t sistema-bancario:${{ github.sha }} .
-
 
 # JOB 3 – TAG DE BUILD (apenas push na main)
 # Cria uma tag com timestamp para identificar cada build da branch principal
@@ -267,3 +264,78 @@ jobs:
         with:
           name: ${{ steps.nova_tag.outputs.tag }}
           path: ${{ steps.nova_tag.outputs.tag }}.zip
+
+# 
+# JOB 5 – RELEASE DE PRODUÇÃO (push na producao = PR aceito)
+#
+  rel:
+    name: Release de Produção (producao)
+    runs-on: ubuntu-latest
+    needs: docker
+    # Só executa quando há push na producao (= PR foi aceito/merged)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/producao'
+
+    steps:
+      - name: Baixar código (histórico completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Buscar tags remotas
+        run: git fetch --tags
+
+      - name: Identificar branch de origem do merge
+        id: tipo
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          echo "Commit de merge: $COMMIT_MSG"
+
+          ORIGEM=$(echo "$COMMIT_MSG" | grep -oP '(?<=from )[^ ]+' | awk -F'/' '{print $NF}' || echo "")
+          echo "Branch de origem detectada: $ORIGEM"
+
+          if [ "$ORIGEM" = "staging" ]; then
+            echo "tipo=staging" >> $GITHUB_OUTPUT
+          else
+            echo "tipo=outro" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Buscar última tag rel
+        id: last_tag
+        run: |
+          # Ordena semanticamente todas as tags rel-* e pega a maior
+          TAG=$(git tag --list "rel-*" --sort=-v:refname | head -n 1 || echo "")
+          echo "Última rel encontrada: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Gerar próxima versão rel
+        id: nova_tag
+        run: |
+          ULTIMA="${{ steps.last_tag.outputs.tag }}"
+          TIPO="${{ steps.tipo.outputs.tipo }}"
+
+          if [ "$TIPO" != "staging" ]; then
+            echo "Branch de origem não é staging. Abortando a criação da tag rel."
+            exit 1
+          fi
+
+          if [ -z "$ULTIMA" ]; then
+            NOVA="rel-1.0"
+          else
+            BASE=$(echo "$ULTIMA" | sed 's/^rel-//')
+            MAJOR=$(echo "$BASE" | awk -F. '{print $1}')
+            MINOR=$(echo "$BASE" | awk -F. '{print $2}')
+            
+            # Incrementa o Y
+            MINOR=$((MINOR + 1))
+            NOVA="rel-$MAJOR.$MINOR"
+          fi
+
+          echo "Nova tag rel: $NOVA"
+          echo "tag=$NOVA" >> $GITHUB_OUTPUT
+
+      - name: Criar tag rel
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag ${{ steps.nova_tag.outputs.tag }}
+          git push origin ${{ steps.nova_tag.outputs.tag }}
