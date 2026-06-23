@@ -295,6 +295,8 @@ jobs:
 
           if [ "$ORIGEM" = "staging" ]; then
             echo "tipo=staging" >> $GITHUB_OUTPUT
+          elif [[ "$ORIGEM" == hotfix* ]]; then
+            echo "tipo=hotfix" >> $GITHUB_OUTPUT
           else
             echo "tipo=outro" >> $GITHUB_OUTPUT
           fi
@@ -313,21 +315,45 @@ jobs:
           ULTIMA="${{ steps.last_tag.outputs.tag }}"
           TIPO="${{ steps.tipo.outputs.tipo }}"
 
-          if [ "$TIPO" != "staging" ]; then
-            echo "Branch de origem não é staging. Abortando a criação da tag rel."
+          if [ "$TIPO" != "staging" ] && [ "$TIPO" != "hotfix" ]; then
+            echo "Branch de origem não é staging nem hotfix. Abortando a criação da tag rel."
             exit 1
           fi
 
           if [ -z "$ULTIMA" ]; then
-            NOVA="rel-1.0"
+            if [ "$TIPO" = "staging" ]; then
+              NOVA="rel-1.0"
+            else
+              NOVA="rel-1.0.1"
+            fi
           else
             BASE=$(echo "$ULTIMA" | sed 's/^rel-//')
             MAJOR=$(echo "$BASE" | awk -F. '{print $1}')
             MINOR=$(echo "$BASE" | awk -F. '{print $2}')
             
-            # Incrementa o Y
-            MINOR=$((MINOR + 1))
-            NOVA="rel-$MAJOR.$MINOR"
+            if [ "$TIPO" = "staging" ]; then
+              # Incrementa o Y
+              MINOR=$((MINOR + 1))
+              NOVA="rel-$MAJOR.$MINOR"
+            elif [ "$TIPO" = "hotfix" ]; then
+              # Hotfix: incrementa Z
+              ULTIMA_XY=$(git tag --list "rel-$MAJOR.$MINOR*" --sort=-v:refname | head -n 1 || echo "")
+              
+              if [ -z "$ULTIMA_XY" ]; then
+                ULTIMA_XY="$ULTIMA"
+              fi
+
+              BASE_XY=$(echo "$ULTIMA_XY" | sed 's/^rel-//')
+              PATCH_ATUAL=$(echo "$BASE_XY" | awk -F. '{print $3}')
+
+              if [ -z "$PATCH_ATUAL" ]; then
+                PATCH_ATUAL=0
+              fi
+
+              PATCH_NOVO=$((PATCH_ATUAL + 1))
+              XY_BASE=$(echo "$BASE_XY" | awk -F. '{print $1"."$2}')
+              NOVA="rel-$XY_BASE.$PATCH_NOVO"
+            fi
           fi
 
           echo "Nova tag rel: $NOVA"
