@@ -128,11 +128,11 @@ public class ContaService {
 
         Conta conta = buscarContaOuLancarExcecao(numero);
 
-        if ((conta instanceof ContaCorrente || conta instanceof ContaBonus) && (conta.getSaldo() - valor < -1000)) {
+        if ((conta instanceof ContaCorrente || conta instanceof ContaBonus) && conta.getSaldo() - valor < -1000) {
             throw new IllegalArgumentException("Saldo insuficiente para realizar o débito. A conta pode ficar no máximo com saldo negativo de R$ -1000.");
         }
 
-        if (conta instanceof ContaPoupanca && (conta.getSaldo() - valor < 0)) {
+        if (conta instanceof ContaPoupanca && conta.getSaldo() - valor < 0) {
             throw new IllegalArgumentException("Saldo insuficiente para realizar o débito. A conta poupança não pode ficar com saldo negativo.");
         }
 
@@ -162,11 +162,12 @@ public class ContaService {
         Conta contaOrigem = buscarContaOuLancarExcecao(origem);
         Conta contaDestino = buscarContaOuLancarExcecao(destino);
 
-        if ((contaOrigem instanceof ContaCorrente || contaOrigem instanceof ContaBonus) && (contaOrigem.getSaldo() - valor < -1000)) {
+        if ((contaOrigem instanceof ContaCorrente || contaOrigem instanceof ContaBonus)
+        && contaOrigem.getSaldo() - valor < -1000) {
             throw new IllegalArgumentException("Saldo insuficiente para realizar a transferência. A conta pode ficar no máximo com saldo negativo de R$ -1000.");
         }
         
-        if (contaOrigem instanceof ContaPoupanca && (contaOrigem.getSaldo() - valor < 0)) {
+        if (contaOrigem instanceof ContaPoupanca && contaOrigem.getSaldo() - valor < 0) {
             throw new IllegalArgumentException("Saldo insuficiente para realizar a transferência. A conta poupança não pode ficar com saldo negativo.");
         }
 
