@@ -188,7 +188,7 @@ curl -X PUT http://localhost:8080/banco/conta/123/debito \
 -d '{"valor":999999.0}'
 ```
 
-### 8.10. Realizar Transferência entre Contas
+### 8.10. Realizar Transferência entre Conta
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/transferencia \
