@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Pega a mensagem de commit
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Define o repositório
+REPO="johncarlosofficial/sistema-bancario"
+
+# Valida o formato da mensagem de commit
+REGEX="^#([0-9]+) - .+"
+
+if [[ ! "$COMMIT_MSG" =~ $REGEX ]]; then
+    echo "ERRO: A mensagem do commit está fora do padrão exigido!"
+    echo "O padrão é: #NUM_ISSUE - MENSAGEM"
+    echo "Exemplo: #33 - Correção da mensagem da tela principal"
+    exit 1
+fi
+
+# Extrai o id do issue
+ISSUE_NUM="${BASH_REMATCH[1]}"
+
+echo "Verificando se a issue #$ISSUE_NUM existe no repositório $REPO..."
+
+# Faz uma requisição à API do GitHub para verificar se o issue existe.
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://api.github.com/repos/$REPO/issues/$ISSUE_NUM")
+
+if [ "$HTTP_STATUS" != "200" ]; then
+    echo "ERRO: A issue #$ISSUE_NUM não existe no repositório $REPO no GitHub!"
+    echo "Commits que não tiverem uma issue válida são rejeitados."
+    exit 1
+fi
+
+echo "Sucesso: Mensagem validada e Issue confirmada!"
+exit 0
