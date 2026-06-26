@@ -47,7 +47,29 @@
                     <failOnViolation>false</failOnViolation>
                 </configuration>
             </plugin>
-        </plugins>
+            
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>setup-git-hooks</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>git</executable>
+                            <arguments>
+                                <argument>config</argument>
+                                <argument>core.hooksPath</argument>
+                                <argument>hooks</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+            </executions>
+        </plugin>
     </build>
 
 </project>
