@@ -87,6 +87,14 @@ Após gerar a imagem, crie e execute um container. O container é uma instância
 docker run -d --name sistema-bancario -p 8080:8080 sistema-bancario
 ```
 
+### 6.5. Iniciar um container existente
+
+Caso o container já tenha sido criado anteriormente e esteja apenas parado (por exemplo, após reiniciar o computador), não é necessário usar o comando run de novo. Basta apenas iniciá-lo:
+
+```bash
+docker start sistema-bancario
+```
+
 ## 7. Endpoints
 
 ### 7.1. Cadastrar Conta Simples
