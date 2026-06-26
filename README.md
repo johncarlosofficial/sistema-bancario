@@ -28,16 +28,42 @@ Este projeto consiste em um sistema bancário simples desenvolvido em **Java**.
 
 * **`hotfix/`**: Criada a partir da `production` para correções urgentes;merge na `staging` e na `production`.
 
-## 4. VSCode
+## 4. Commits
 
-### 4.1. Extensões Recomendadas
+* **Formato**: `tipo: descrição (#issue)`
+
+* **Tipos**:
+  * feat
+  * fix
+  * refactor
+  * test
+  * docs
+
+**Exemplo**:
+
+```text
+feat: implementa cadastro de conta (#5)
+```
+
+## 5. Regras
+
+* Use **feature branches** (*sem* commits diretos na `main`);
+* Teste todos os commits, não apenas os da `main`;
+* **Todo commit deve estar associado a uma issue**;
+* Commits enviados **NUNCA** são rebased;
+* Mensagens devem refletir claramente a intenção;
+* As branches **NÃO** devem ser removidas – **nem mesmo as auxiliares** – durante todo o desenvolvimento do projeto.
+
+## 6. VSCode
+
+### 6.1. Extensões Recomendadas
 
 * [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack);
 * [Maven for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-maven);
 * [Debugger for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-debug);
 * [Language Support for Java (by Red Hat)](https://marketplace.visualstudio.com/items?itemName=redhat.java).
 
-### 4.2. Problemas Comuns
+### 6.2. Problemas Comuns
 
 Se houver warnings incorretos do Java no VSCode, limpe o workspace do Java Language Server:
 
@@ -47,23 +73,16 @@ Se houver warnings incorretos do Java no VSCode, limpe o workspace do Java Langu
 2. Digite: `Java: Clean Java Language Server Workspace`
 3. Confirme e reinicie quando solicitado
 
-## 5. Docker Hub
+## 7. Execução
 
-A imagem do projeto está disponível no Docker Hub:
-
-[johncarlosofficial1/sistema-bancario](https://hub.docker.com/r/johncarlosofficial1/sistema-bancario)
-
-## 6. Execução
-
-### 6.1. Clonar o projeto
+### 7.1. Clonar o projeto
 
 ```bash
 git clone https://github.com/johncarlosofficial/sistema-bancario.git
 cd sistema-bancario
-mvn initialize # Configura automaticamente os Git Hooks do projeto
 ```
 
-### 6.2. Executar os testes
+### 7.2. Executar os testes
 
 Antes de subir a aplicação, execute os testes para validar que as principais funcionalidades continuam funcionando corretamente.
 
@@ -71,7 +90,7 @@ Antes de subir a aplicação, execute os testes para validar que as principais f
 mvn test
 ```
 
-### 6.3. Gerar a imagem Docker
+### 7.3. Gerar a imagem Docker
 
 O Docker é utilizado para empacotar a aplicação junto com todas as dependências necessárias para sua execução. Isso garante que o sistema rode da mesma forma em qualquer ambiente, sem depender da configuração da máquina de quem está executando.
 
@@ -79,7 +98,7 @@ O Docker é utilizado para empacotar a aplicação junto com todas as dependênc
 docker build -t sistema-bancario .
 ```
 
-### 6.4. Subir o container
+### 7.4. Subir o container
 
 Após gerar a imagem, crie e execute um container. O container é uma instância da aplicação em execução, disponibilizando a API na porta 8080.
 
@@ -87,9 +106,9 @@ Após gerar a imagem, crie e execute um container. O container é uma instância
 docker run -d --name sistema-bancario -p 8080:8080 sistema-bancario
 ```
 
-## 7. Endpoints
+## 8. Endpoints
 
-### 7.1. Cadastrar Conta Simples
+### 8.1. Cadastrar Conta Simples
 
 ```bash
 curl -X POST http://localhost:8080/banco/conta \
@@ -101,7 +120,7 @@ curl -X POST http://localhost:8080/banco/conta \
 }'
 ```
 
-### 7.2. Cadastrar Conta Poupança
+### 8.2. Cadastrar Conta Poupança
 
 ```bash
 curl -X POST http://localhost:8080/banco/conta \
@@ -113,7 +132,7 @@ curl -X POST http://localhost:8080/banco/conta \
 }'
 ```
 
-### 7.3. Cadastrar Conta Bônus
+### 8.3. Cadastrar Conta Bônus
 
 ```bash
 curl -X POST http://localhost:8080/banco/conta \
@@ -125,19 +144,19 @@ curl -X POST http://localhost:8080/banco/conta \
 }'
 ```
 
-### 7.4. Consultar Conta
+### 8.4. Consultar Conta
 
 ```bash
 curl  http://localhost:8080/banco/conta/123
 ```
 
-### 7.5. Consultar saldo
+### 8.5. Consultar saldo
 
 ```bash
 curl http://localhost:8080/banco/conta/123/saldo
 ```
 
-### 7.6. Realizar Crédito
+### 8.6. Realizar Crédito
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/123/credito \
@@ -145,7 +164,7 @@ curl -X PUT http://localhost:8080/banco/conta/123/credito \
 -d '{"valor":250.0}'
 ```
 
-### 7.7. Testar Erro - Crédito Negativo
+### 8.7. Testar Erro - Crédito Negativo
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/123/credito \
@@ -153,7 +172,7 @@ curl -X PUT http://localhost:8080/banco/conta/123/credito \
 -d '{"valor":-50.0}'
 ```
 
-### 7.8. Realizar Débito
+### 8.8. Realizar Débito
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/123/debito \
@@ -161,7 +180,7 @@ curl -X PUT http://localhost:8080/banco/conta/123/debito \
 -d '{"valor":100.0}'
 ```
 
-### 7.9. Testar Erro - Débito com valor maior que o saldo
+### 8.9. Testar Erro - Débito com valor maior que o saldo
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/123/debito \
@@ -169,7 +188,7 @@ curl -X PUT http://localhost:8080/banco/conta/123/debito \
 -d '{"valor":999999.0}'
 ```
 
-### 7.10. Realizar Transferência entre Conta
+### 8.10. Realizar Transferência entre Conta
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/transferencia \
@@ -181,7 +200,7 @@ curl -X PUT http://localhost:8080/banco/conta/transferencia \
 }'
 ```
 
-### 7.11. Testar Erro - Transferência com saldo insuficiente
+### 8.11. Testar Erro - Transferência com saldo insuficiente
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/transferencia \
@@ -193,7 +212,7 @@ curl -X PUT http://localhost:8080/banco/conta/transferencia \
 }'
 ```
 
-### 7.12. Aplicar Rendimento (Juros)
+### 8.12. Aplicar Rendimento (Juros)
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/rendimento \
@@ -203,7 +222,7 @@ curl -X PUT http://localhost:8080/banco/conta/rendimento \
 }'
 ```
 
-### 7.13. Testar Erro - Taxa inválida (negativa)
+### 8.13. Testar Erro - Taxa inválida (negativa)
 
 ```bash
 curl -X PUT http://localhost:8080/banco/conta/rendimento \
