@@ -60,6 +60,7 @@ A imagem do projeto está disponível no Docker Hub:
 ```bash
 git clone https://github.com/johncarlosofficial/sistema-bancario.git
 cd sistema-bancario
+mvn initialize # Configura automaticamente os Git Hooks do projeto
 ```
 
 ### 6.2. Executar os testes
