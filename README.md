@@ -239,4 +239,3 @@ curl -X PUT http://localhost:8080/banco/conta/rendimento \
   "taxa": -0.1
 }'
 ```
-
