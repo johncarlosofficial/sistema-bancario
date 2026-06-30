@@ -27,6 +27,12 @@ jobs:
             
             for (const commitObj of commits) {
               const message = commitObj.commit.message.split('\n')[0]; // Pega primeira linha da mensagem do commit
+              const isMergeCommit = commitObj.parents.length > 1 || message.startsWith('Merge');
+
+              if (isMergeCommit) {
+                console.log(`Ignorando commit merge: ${message}`);
+                continue;
+              }
               
               // Validation 1: Regex Format
               const match = message.match(regex);
