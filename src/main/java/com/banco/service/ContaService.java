@@ -176,7 +176,7 @@ public class ContaService {
         }
 
         // Realiza débito na conta de origem e crédito na de destino
-        contaOrigem.setSaldo(contaOrigem.getSaldo() - valor);
+        contaOrigem.setSaldo(contaOrigem.getSaldo());
         contaDestino.setSaldo(contaDestino.getSaldo() + valor);
 
         if (contaDestino instanceof ContaBonus bonus) {
